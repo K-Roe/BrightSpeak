@@ -36,8 +36,8 @@ const categories = [
   },
   {
     id: "play",
-    label: "Play (coming soon)",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/3103/3103478.png" },
+    label: "Play Ten in a bed",
+    image: require("../assets/images/teninbed.png"),
     route: "/games/ten-bed",
   },
   {
