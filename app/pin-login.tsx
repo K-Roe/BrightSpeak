@@ -41,6 +41,10 @@ export default function PinLogin() {
       <TouchableOpacity style={styles.button} onPress={checkPin}>
         <Text style={styles.buttonText}>Enter</Text>
       </TouchableOpacity>
+
+       <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+        <Text style={styles.buttonText}>Back</Text>
+      </TouchableOpacity>
     </View>
   );
 }

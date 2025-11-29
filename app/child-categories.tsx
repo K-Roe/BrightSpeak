@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -16,12 +17,14 @@ const categories = [
   {
     id: "numbers",
     label: "Numbers",
-    image: "https://cdn-icons-png.flaticon.com/512/123/123359.png"
+    image: "https://cdn-icons-png.flaticon.com/512/123/123359.png",
+    route: "/categories/numbers"
   },
   {
   id: "alphabet",
   label: "Alphabet",
-  image: "https://cdn-icons-png.flaticon.com/512/123/123367.png"
+  image: "https://cdn-icons-png.flaticon.com/512/123/123367.png",
+      route: "/categories/letters"
  },
   {
     id: "play",
@@ -68,12 +71,21 @@ useEffect(() => {
             key={cat.id} 
             style={styles.tile}
             activeOpacity={0.8}
+            onPress={() => {
+    if (cat.route) {
+      router.push(cat.route);
+    }
+  }}
           >
             <Image source={{ uri: cat.image }} style={styles.icon} />
             <Text style={styles.label}>{cat.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
+             <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+              <Text style={styles.buttonText}>Back</Text>
+            </TouchableOpacity>
+      
     </View>
   );
 }
@@ -122,5 +134,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
+  },
+
+   button: {
+    backgroundColor: "#4F46E5",
+    width: "80%",
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 20,
+    alignItems: "center",
+  },
+
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });

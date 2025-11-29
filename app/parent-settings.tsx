@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Input from "../components/input";
@@ -56,6 +57,11 @@ export default function ParentSettings() {
         <TouchableOpacity style={styles.button} onPress={saveProfile}>
           <Text style={styles.buttonText}>Save Profile</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+         <Text style={styles.buttonText}>Back</Text>
+        </TouchableOpacity>
+        
       </View>
 
       <Text style={styles.note}>

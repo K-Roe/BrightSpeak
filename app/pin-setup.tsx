@@ -50,6 +50,11 @@ export default function PinSetup() {
         <Text style={styles.buttonText}>Save PIN</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+        <Text style={styles.buttonText}>Back</Text>
+      </TouchableOpacity>
+      
+
       <Text style={styles.note}>
         This PIN will protect the parent settings so children can't change them.
       </Text>
