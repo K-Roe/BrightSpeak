@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Label } from "@react-navigation/elements";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -36,18 +37,21 @@ export default function ParentSettings() {
       <Text style={styles.title}>Parent Settings</Text>
 
       <View style={styles.card}>
+        <Label style={styles.label}>Child Name</Label>
         <Input
           placeholder="Child's Name"
           value={name}
           onChangeText={setName}
         />
 
+        <Label style={styles.label}>Child Age</Label>
         <Input
           placeholder="Age"
           value={age}
           onChangeText={setAge}
         />
 
+        <Label style={styles.label}>Child Sex</Label>
         <Input
           placeholder="Sex (Boy/Girl/Other)"
           value={sex}
@@ -121,5 +125,11 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
     paddingHorizontal: 20,
+  },
+  label: {
+    marginTop: 5,  
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
   },
 });
