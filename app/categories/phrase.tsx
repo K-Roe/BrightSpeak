@@ -109,35 +109,40 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginBottom: 20,
   },
+
   grid: {
     width: "90%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    marginBottom: 30,   // extra space for easier back button access
   },
+
   tile: {
-    width: "48%",
-    height: 120,
+    width: "45%",        // slightly smaller tiles
+    height: 100,         // was 120
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 18,
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     elevation: 3,
   },
+
   phrase: {
-    fontSize: 28,
+    fontSize: 22,        // was 28
     fontWeight: "800",
     color: "#4F46E5",
     textAlign: "center",
   },
+
   backButton: {
     backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 20,
   },
   backText: {

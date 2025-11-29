@@ -7,49 +7,47 @@ const categories = [
   {
     id: "food",
     label: "Food",
-    image: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png" },
     route: "/categories/food",
   },
   {
     id: "phrase",
     label: "Phrase",
-    image: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png" },
     route: "/categories/phrase",
   },
   {
     id: "numbers",
     label: "Numbers",
-    image: "https://cdn-icons-png.flaticon.com/512/123/123359.png",
+    image: require("../assets/images/numbers.png"), // LOCAL IMAGE FIXED
     route: "/categories/numbers",
   },
   {
     id: "alphabet",
     label: "Alphabet",
-    image: "https://cdn-icons-png.flaticon.com/512/123/123367.png",
+    image: require("../assets/images/alphabet.png"),
     route: "/categories/letters",
   },
-{
+  {
     id: "emotions",
     label: "Feelings",
-    image: "https://cdn-icons-png.flaticon.com/512/742/742752.png",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/742/742752.png" },
     route: "/categories/feelings",
-
   },
   {
     id: "play",
     label: "Play (coming soon)",
-    image: "https://cdn-icons-png.flaticon.com/512/3103/3103478.png",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/3103/3103478.png" },
   },
   {
     id: "videos",
     label: "Videos (coming soon)",
-    image: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png" },
   },
-
   {
     id: "help",
-    label: "Help(coming soon)",
-    image: "https://cdn-icons-png.flaticon.com/512/463/463612.png",
+    label: "Help (coming soon)",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/463/463612.png" },
   },
 ];
 
@@ -84,7 +82,7 @@ export default function ChildCategories() {
               }
             }}
           >
-            <Image source={{ uri: cat.image }} style={styles.icon} />
+            <Image source={cat.image} style={styles.icon} />
             <Text style={styles.label}>{cat.label}</Text>
           </TouchableOpacity>
         ))}

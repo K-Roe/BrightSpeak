@@ -78,19 +78,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+
   },
   tile: {
-    width: "30%",
+    width: "28%",      
     aspectRatio: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 18,
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
     elevation: 3,
   },
   number: {
-    fontSize: 40,
+    fontSize: 32,      
     fontWeight: "800",
     color: "#4F46E5",
   },
@@ -99,7 +100,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 20,
     marginBottom: 20,
   },
   backText: {
