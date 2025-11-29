@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Label } from "@react-navigation/elements";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Input from "../components/input";
 
 export default function ParentSettings() {
@@ -33,64 +33,71 @@ export default function ParentSettings() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Parent Settings</Text>
 
+      {/* Profile card */}
       <View style={styles.card}>
         <Label style={styles.label}>Child Name</Label>
-        <Input
-          placeholder="Child's Name"
-          value={name}
-          onChangeText={setName}
-        />
+        <Input placeholder="Child's Name" value={name} onChangeText={setName} />
 
         <Label style={styles.label}>Child Age</Label>
-        <Input
-          placeholder="Age"
-          value={age}
-          onChangeText={setAge}
-        />
+        <Input placeholder="Age" value={age} onChangeText={setAge} />
 
         <Label style={styles.label}>Child Sex</Label>
-        <Input
-          placeholder="Sex (Boy/Girl/Other)"
-          value={sex}
-          onChangeText={setSex}
-        />
+        <Input placeholder="Sex (Boy/Girl/Other)" value={sex} onChangeText={setSex} />
 
         <TouchableOpacity style={styles.button} onPress={saveProfile}>
           <Text style={styles.buttonText}>Save Profile</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
-         <Text style={styles.buttonText}>Back</Text>
+          <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
-        
+
+        <Text style={styles.note}>
+          This information will help personalise your child's experience.
+        </Text>
       </View>
 
-      <Text style={styles.note}>
-        This information will help personalise your child's experience.
-      </Text>
-    </View>
+      {/* Phrases card */}
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/parents/phrases")}
+        >
+          <Text style={styles.buttonText}>Phrases</Text>
+        </TouchableOpacity>
+         <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/parents/food")}
+        >
+          <Text style={styles.buttonText}>Food and Drink</Text>
+        </TouchableOpacity>
+            <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/parents/feelings")}
+        >
+          <Text style={styles.buttonText}>Feelings</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
-    backgroundColor: "#F5F5F5",
-    alignItems: "center",
     paddingTop: 60,
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
   },
-
   title: {
     fontSize: 32,
     fontWeight: "800",
     color: "#1F2937",
     marginBottom: 30,
   },
-
   card: {
     width: "100%",
     backgroundColor: "#FFFFFF",
@@ -102,8 +109,8 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+    marginBottom: 30, // spacing between cards
   },
-
   button: {
     backgroundColor: "#4F46E5",
     width: "80%",
@@ -112,13 +119,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
   },
-
   buttonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
   },
-
   note: {
     marginTop: 20,
     fontSize: 14,
@@ -127,7 +132,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   label: {
-    marginTop: 5,  
+    marginTop: 5,
     fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",

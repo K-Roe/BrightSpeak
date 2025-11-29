@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 export default function People() {
   const [childName, setChildName] = useState("Child");
+  const [foods, setFoods] = useState<string[]>([]);
 
   useEffect(() => {
     const loadName = async () => {
@@ -15,6 +16,28 @@ export default function People() {
         setChildName(profile.name);
       }
     };
+     const loadFood = async () => {
+      const saved = await AsyncStorage.getItem("childFood");
+      if (saved) {
+        const childFood = JSON.parse(saved);
+        setFoods(childFood.food || []);
+      } else {
+        const defaultFoods  = [
+          "Water",
+          "Juice",
+          "Milk",
+          "Apple",
+          "Banana",
+          "Sandwich",
+          "Ice Cream",
+          "Breakfast",
+          "Lunch",
+          "Dinner",
+        ];
+        setFoods(defaultFoods  || []);
+      }
+    };
+    loadFood();
     loadName();
   }, []);
 
@@ -25,18 +48,7 @@ export default function People() {
     });
   };
 
-  const foods = [
-    "Water",
-    "Juice",
-    "Milk",
-    "Apple",
-    "Banana",
-    "Sandwich",
-    "Ice Cream",
-    "Breakfast",
-    "Lunch",
-    "Dinner",
-  ];
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

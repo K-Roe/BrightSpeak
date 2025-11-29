@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 export default function Feelings() {
   const [childName, setChildName] = useState("Child");
+  const [feelings, setFeelings] = useState<string[]>([]);
 
   useEffect(() => {
     const loadName = async () => {
@@ -15,6 +16,30 @@ export default function Feelings() {
         setChildName(profile.name);
       }
     };
+      const loadFeelings = async () => {
+      const saved = await AsyncStorage.getItem("childFeelings");
+      if (saved) {
+        const childFeelings = JSON.parse(saved);
+        setFeelings(childFeelings.feelings || []);
+      } else {
+          const defaultFeelings = [
+            "I Feel Sad",
+            "I Feel Happy",
+            "I Feel Angry",
+            "I Feel Scared",
+            "I Feel Tired",
+            "I Feel Sick",
+            "I Feel Excited",
+            "I Feel Hungry",
+            "I Feel Thirsty",
+            "I Feel Lonely",
+            "I Feel Brave",
+            "I Feel Silly",
+          ];
+          setFeelings(defaultFeelings);
+      }
+    };
+    loadFeelings();
     loadName();
   }, []);
 
@@ -25,28 +50,13 @@ export default function Feelings() {
     });
   };
 
-  const Feelings = [
-    "I Feel Sad",
-    "I Feel Happy",
-    "I Feel Angry",
-    "I Feel Scared",
-    "I Feel Tired",
-    "I Feel Sick",
-    "I Feel Excited",
-    "I Feel Hungry",
-    "I Feel Thirsty",
-    "I Feel Lonely",
-    "I Feel Brave",
-    "I Feel Silly",
-  ];
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Feelings</Text>
       <Text style={styles.subtitle}>Tap a feeling, {childName}</Text>
 
       <View style={styles.grid}>
-        {Feelings.map((feel) => (
+        {feelings.map((feel) => (
           <TouchableOpacity
             key={feel}
             style={styles.tile}

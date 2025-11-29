@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 export default function People() {
   const [childName, setChildName] = useState("Child");
+  const [phrases, setPhrases] = useState<string[]>([]);
 
   useEffect(() => {
     const loadName = async () => {
@@ -15,6 +16,40 @@ export default function People() {
         setChildName(profile.name);
       }
     };
+     const loadPhrases = async () => {
+      const savedPhrases = await AsyncStorage.getItem("childPhrases");
+      if (savedPhrases) {
+        const childPhrases = JSON.parse(savedPhrases);
+        setPhrases(childPhrases.phrases || []);
+      } else {
+          const phrasesDefault = [
+              "Mummy",
+              "Daddy",
+              "Brother",
+              "Sister",
+              "Nanna",
+              "Granddad",
+              "Friend",
+              "Teacher",
+              "Good Morning",
+              "Good Night",
+              "Please",
+              "Thank You",
+              "Help",
+              "Sorry",
+              "I Love You",
+              "Kiss",
+              "Hug",
+              "Play",
+              "I'm Hungry",
+              "I'm Thirsty",
+              "Toilet",
+            ];
+
+            setPhrases(phrasesDefault);
+      }
+    };
+    loadPhrases();
     loadName();
   }, []);
 
@@ -25,29 +60,7 @@ export default function People() {
     });
   };
 
-  const phrases = [
-    "Mummy",
-    "Daddy",
-    "Brother",
-    "Sister",
-    "Nanna",
-    "Granddad",
-    "Friend",
-    "Teacher",
-    "Good Morning",
-    "Good Night",
-    "Please",
-    "Thank You",
-    "Help",
-    "Sorry",
-    "I Love You",
-    "Kiss",
-    "Hug",
-    "Play",
-    "I'm Hungry",
-    "I'm Thirsty",
-    "Toilet",
-  ];
+  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
