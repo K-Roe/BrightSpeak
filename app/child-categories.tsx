@@ -10,6 +10,12 @@ const categories = [
     image: { uri: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png" },
     route: "/categories/food",
   },
+   {
+    id: "people",
+    label: "People",
+    image: { uri: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png" },
+    route: "/categories/people",
+  },
   {
     id: "phrase",
     label: "Phrase",
@@ -19,7 +25,7 @@ const categories = [
   {
     id: "numbers",
     label: "Numbers",
-    image: require("../assets/images/numbers.png"), // LOCAL IMAGE FIXED
+    image: require("../assets/images/numbers.png"),
     route: "/categories/numbers",
   },
   {
@@ -39,11 +45,6 @@ const categories = [
     label: "Play Ten in a bed",
     image: require("../assets/images/teninbed.png"),
     route: "/games/ten-bed",
-  },
-  {
-    id: "videos",
-    label: "Videos (coming soon)",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png" },
   },
   {
     id: "help",

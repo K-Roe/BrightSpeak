@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 export default function People() {
   const [childName, setChildName] = useState("Child");
-  const [phrases, setPhrases] = useState<string[]>([]);
+  const [peoples, setPeoples] = useState<string[]>([]);
 
   useEffect(() => {
     const loadName = async () => {
@@ -16,32 +16,27 @@ export default function People() {
         setChildName(profile.name);
       }
     };
-     const loadPhrases = async () => {
-      const savedPhrases = await AsyncStorage.getItem("childPhrases");
-      if (savedPhrases) {
-        const childPhrases = JSON.parse(savedPhrases);
-        setPhrases(childPhrases.phrases || []);
+     const loadPeople = async () => {
+      const savedPeoples = await AsyncStorage.getItem("childPeople");
+      if (savedPeoples) {
+        const childPeoples = JSON.parse(savedPeoples);
+        setPeoples(childPeoples.peoples || []);
       } else {
           const phrasesDefault = [
-              "Good Morning",
-              "Good Night",
-              "Please",
-              "Thank You",
-              "Help",
-              "Sorry",
-              "I Love You",
-              "Kiss",
-              "Hug",
-              "Play",
-              "I'm Hungry",
-              "I'm Thirsty",
-              "Toilet",
+              "Mummy",
+              "Daddy",
+              "Brother",
+              "Sister",
+              "Nanna",
+              "Granddad",
+              "Friend",
+              "Teacher",
             ];
 
-            setPhrases(phrasesDefault);
+            setPeoples(phrasesDefault);
       }
     };
-    loadPhrases();
+    loadPeople();
     loadName();
   }, []);
 
@@ -56,21 +51,21 @@ export default function People() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Phrases</Text>
-      <Text style={styles.subtitle}>Tap a phrase, {childName}</Text>
+      <Text style={styles.title}>People</Text>
+      <Text style={styles.subtitle}>Tap a person, {childName}</Text>
 
       <View style={styles.grid}>
-        {phrases.map((phrase) => (
+        {peoples.map((people) => (
           <TouchableOpacity
-            key={phrase}
+            key={people}
             style={styles.tile}
             activeOpacity={0.8}
             onPress={() => {
-              speakThePhrase(phrase);
+              speakThePhrase(people);
             }}
           >
-            <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
-              {phrase}
+            <Text style={styles.people} numberOfLines={2} adjustsFontSizeToFit>
+              {people}
             </Text>
           </TouchableOpacity>
         ))}
@@ -122,7 +117,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  phrase: {
+  people: {
     fontSize: 22,        // was 28
     fontWeight: "800",
     color: "#4F46E5",

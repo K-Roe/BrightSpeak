@@ -74,12 +74,20 @@ export default function ParentSettings() {
         >
           <Text style={styles.buttonText}>Food and Drink</Text>
         </TouchableOpacity>
-            <TouchableOpacity
+        <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/parents/feelings")}
         >
           <Text style={styles.buttonText}>Feelings</Text>
         </TouchableOpacity>
+
+          <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/parents/people")}
+        >
+          <Text style={styles.buttonText}>People</Text>
+        </TouchableOpacity>
+        
       </View>
     </ScrollView>
   );

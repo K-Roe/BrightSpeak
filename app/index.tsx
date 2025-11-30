@@ -33,9 +33,7 @@ export default function Index() {
       </View>
 
       <Image
-        source={{
-          uri: "https://reactnative.dev/docs/assets/p_cat2.png",
-        }}
+        source={require("../assets/images/indexLogo.png")}
         style={styles.image}
       />
 
