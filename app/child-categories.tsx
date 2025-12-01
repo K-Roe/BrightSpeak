@@ -19,7 +19,7 @@ const categories = [
   {
     id: "phrase",
     label: "Phrase",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png" },
+    image: require("../assets/images/phrase.png"),
     route: "/categories/phrase",
   },
   {

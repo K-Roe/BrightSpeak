@@ -1,82 +1,167 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import FoodImagePicker from "../../components/FoodImagePicker";
 import Input from "../../components/input";
 
+// --------------------------------------
+// TYPES
+// --------------------------------------
+type FoodItem = {
+  name: string;
+  image?: string; // file uri
+  icon?: string;  // MaterialCommunityIcons name
+};
+
+// --------------------------------------
+// MAIN SCREEN
+// --------------------------------------
 export default function ParentFood() {
-  const [food, setFood] = useState<string[]>([]);
+  const [food, setFood] = useState<FoodItem[]>([]);
   const [newFood, setNewFood] = useState<string>("");
 
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pendingName, setPendingName] = useState<string>("");
+
+  // ----------------------------------
+  // LOAD SAVED FOOD
+  // ----------------------------------
   useEffect(() => {
     const loadData = async () => {
       const saved = await AsyncStorage.getItem("childFood");
       if (saved) {
-        const childFood = JSON.parse(saved);
-        setFood(childFood.food || []);
+        const parsed = JSON.parse(saved);
+
+        // If old format = array of strings → convert
+        if (Array.isArray(parsed.food) && typeof parsed.food[0] === "string") {
+          const converted = parsed.food.map((name: string) => ({ name }));
+          setFood(converted);
+        } else {
+          setFood(parsed.food || []);
+        }
       }
     };
     loadData();
   }, []);
 
+  // ----------------------------------
+  // SPEAK WORD
+  // ----------------------------------
   const speakTheFood = (word: string) => {
-    Speech.speak(word.toString(), {
-      rate: 1.0,
-      pitch: 1.0,
-    });
+    Speech.speak(word, { rate: 1.0, pitch: 1.0 });
   };
 
-  const addFood = async () => {
-    if (!newFood.trim()) return;
+  // ----------------------------------
+  // STEP 1: Add name → then choose image/icon
+  // ----------------------------------
+  const beginAddFood = () => {
+    const name = newFood.trim();
+    if (!name) return;
 
-    const updated = [...food, newFood.trim()];
-    setFood(updated);
+    setPendingName(name);
     setNewFood("");
-
-    await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
+    setPickerVisible(true);
   };
 
-  const removeFood = async (foodToDelete: string) => {
-    const updated = food.filter((p) => p !== foodToDelete);
+  // ----------------------------------
+  // STEP 2: After selecting image/icon
+  // ----------------------------------
+  const finishAddFood = async (data: { image?: string; icon?: string }) => {
+    const item: FoodItem = {
+      name: pendingName,
+      ...data,
+    };
+
+    const updated = [...food, item];
     setFood(updated);
 
     await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
   };
 
+  // ----------------------------------
+  // REMOVE (FIXED)
+  // ----------------------------------
+  const removeFood = async (toDelete: FoodItem) => {
+    const updated = food.filter((p) => p.name !== toDelete.name);
+    setFood(updated);
+    await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
+  };
+
+  // --------------------------------------
+  // RENDER
+  // --------------------------------------
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage Food and Drink</Text>
-      <Text style={styles.subtitle}>Tap a phrase to hear it aloud</Text>
+      <Text style={styles.title}>Manage Food & Drink</Text>
+      <Text style={styles.subtitle}>Tap a card to hear it spoken</Text>
 
-      {/* --- Input + Add Button AT THE TOP --- */}
       <Input
         placeholder="Add a new food or drink"
         value={newFood}
         onChangeText={setNewFood}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={addFood}>
-        <Text style={styles.addText}>Add Food or Drink</Text>
+      <TouchableOpacity style={styles.addButton} onPress={beginAddFood}>
+        <Text style={styles.addText}>Next: Choose Picture</Text>
       </TouchableOpacity>
 
-      {/* --- Grid of phrases --- */}
+      {/* IMAGE PICKER MODAL */}
+      <FoodImagePicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={(data) => {
+          setPickerVisible(false);
+          finishAddFood(data);
+        }}
+      />
+
+      {/* FLASHCARD GRID */}
       <View style={styles.grid}>
-        {food.map((drinks) => (
-          <View key={drinks} style={styles.tile}>
+        {food.map((item, index) => (
+          <View key={index} style={styles.card}>
             <TouchableOpacity
-              style={styles.tilePress}
+              style={styles.cardPress}
               activeOpacity={0.8}
-              onPress={() => speakTheFood(drinks)}
+              onPress={() => speakTheFood(item.name)}
             >
-              <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
-                {drinks}
-              </Text>
+              {/* IMAGE / ICON */}
+              {item.image ? (
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.cardImage}
+                />
+              ) : item.icon ? (
+                <MaterialCommunityIcons
+                  name={item.icon}
+                  size={70}
+                  color="#4F46E5"
+                />
+              ) : (
+                <MaterialCommunityIcons
+                  name="image-off"
+                  size={70}
+                  color="#9CA3AF"
+                />
+              )}
+
+              {/* NAME */}
+              <Text style={styles.cardText}>{item.name}</Text>
             </TouchableOpacity>
 
+            {/* DELETE BUTTON */}
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => removeFood(drinks)}
+              onPress={() => removeFood(item)}
             >
               <Text style={styles.deleteText}>Remove</Text>
             </TouchableOpacity>
@@ -84,6 +169,7 @@ export default function ParentFood() {
         ))}
       </View>
 
+      {/* BACK */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.push("../parent-settings")}
@@ -94,10 +180,13 @@ export default function ParentFood() {
   );
 }
 
+// --------------------------------------
+// STYLES
+// --------------------------------------
 const styles = StyleSheet.create({
   container: {
     paddingTop: 40,
-    paddingBottom: 30,
+    paddingBottom: 40,
     backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
@@ -105,7 +194,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     color: "#4F46E5",
-    marginBottom: 5,
   },
   subtitle: {
     fontSize: 18,
@@ -113,7 +201,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  /* INPUT + ADD BUTTON */
   addButton: {
     backgroundColor: "#22C55E",
     paddingVertical: 12,
@@ -128,7 +215,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  /* GRID */
   grid: {
     width: "90%",
     flexDirection: "row",
@@ -136,22 +222,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  tile: {
+  /* FLASHCARDS */
+  card: {
     width: "48%",
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    marginBottom: 20,
-    elevation: 3,
-    padding: 10,
+    marginBottom: 25,
+    elevation: 4,
+    padding: 12,
     alignItems: "center",
   },
-  tilePress: {
-    height: 80,
+  cardPress: {
     width: "100%",
-    justifyContent: "center",
     alignItems: "center",
   },
-  phrase: {
+  cardImage: {
+    width: "90%",
+    height: 100,
+    resizeMode: "contain",
+    borderRadius: 10,
+  },
+  cardText: {
+    marginTop: 10,
     fontSize: 22,
     fontWeight: "700",
     color: "#4F46E5",
@@ -170,14 +262,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  /* BACK BUTTON */
   backButton: {
     backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
-    marginBottom: 20,
   },
   backText: {
     color: "#fff",

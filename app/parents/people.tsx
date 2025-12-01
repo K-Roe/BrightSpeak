@@ -1,82 +1,179 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
+
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Input from "../../components/input";
 
-export default function ParentPeople() {
-  const [peoples, setPeoples] = useState<string[]>([]);
-  const [newPeople, setNewPeople] = useState<string>("");
+// Hybrid card type
+type PeopleCard = {
+  name: string;
+  image?: string; // local image URI
+  icon?: string;
+};
 
+export default function ParentPeople() {
+  const [peoples, setPeoples] = useState<PeopleCard[]>([]);
+  const [newPeople, setNewPeople] = useState<string>("");
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
+
+  // ----------------------------------------
+  // LOAD EXISTING DATA
+  // ----------------------------------------
   useEffect(() => {
     const loadData = async () => {
       const saved = await AsyncStorage.getItem("childPeople");
-      if (saved) {
-        const childpeoples = JSON.parse(saved);
-        setPeoples(childpeoples.peoples || []);
+      if (!saved) return;
+
+      const parsed = JSON.parse(saved);
+
+      // New format: array of objects
+      if (Array.isArray(parsed.peoples) && typeof parsed.peoples[0] === "object") {
+        setPeoples(parsed.peoples);
+      } else {
+        // OLD format: simple string array
+        const converted = (parsed.peoples || []).map((name: string) => ({
+          name,
+        }));
+        setPeoples(converted);
       }
     };
     loadData();
   }, []);
 
-  const speakThePhrase = (word: string) => {
-    Speech.speak(word.toString(), {
+  // ----------------------------------------
+  // SPEAK
+  // ----------------------------------------
+  const speakPerson = (text: string) => {
+    Speech.speak(text, {
       rate: 1.0,
       pitch: 1.0,
     });
   };
 
-  const addPeople = async () => {
+  // ----------------------------------------
+  // IMAGE PICKER
+  // ----------------------------------------
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      alert("Permission required to pick an image!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.9,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    });
+
+    if (!result.canceled) {
+      setPickedImage(result.assets[0].uri);
+    }
+  };
+
+  // ----------------------------------------
+  // ADD PERSON
+  // ----------------------------------------
+  const addPerson = async () => {
     if (!newPeople.trim()) return;
 
-    const updated = [...peoples, newPeople.trim()];
+    const card: PeopleCard = {
+      name: newPeople.trim(),
+      image: pickedImage || undefined,
+    };
+
+    const updated = [...peoples, card];
     setPeoples(updated);
+
     setNewPeople("");
+    setPickedImage(null);
 
-    await AsyncStorage.setItem("childPeople", JSON.stringify({ peoples: updated }));
+    await AsyncStorage.setItem(
+      "childPeople",
+      JSON.stringify({ peoples: updated })
+    );
   };
 
-  const removePeople = async (phraseToDelete: string) => {
-    const updated = peoples.filter((p) => p !== phraseToDelete);
+  // ----------------------------------------
+  // DELETE (FIXED)
+  // ----------------------------------------
+  const removePerson = async (toDelete: PeopleCard) => {
+    const updated = peoples.filter((p) => p.name !== toDelete.name);
+
     setPeoples(updated);
 
-    await AsyncStorage.setItem("childPeople", JSON.stringify({ peoples: updated }));
+    await AsyncStorage.setItem(
+      "childPeople",
+      JSON.stringify({ peoples: updated })
+    );
   };
 
+  // ----------------------------------------
+  // UI
+  // ----------------------------------------
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Manage People</Text>
-      <Text style={styles.subtitle}>Tap a People to hear it aloud</Text>
+      <Text style={styles.subtitle}>Add family, friends, teachers, etc.</Text>
 
-      {/* --- Input + Add Button AT THE TOP --- */}
+      {/* INPUT */}
       <Input
-        placeholder="Add a new person"
+        placeholder="Enter a person (e.g., Mummy, Daddy, Teacher)"
         value={newPeople}
         onChangeText={setNewPeople}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={addPeople}>
-        <Text style={styles.addText}>Add Phrase</Text>
+      {/* PICK IMAGE */}
+      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+        <Text style={styles.imageButtonText}>
+          {pickedImage ? "Change Image" : "Pick Image (Optional)"}
+        </Text>
       </TouchableOpacity>
 
-      {/* --- Grid of phrases --- */}
+      {pickedImage && (
+        <Image source={{ uri: pickedImage }} style={styles.previewImage} />
+      )}
+
+      {/* ADD BUTTON */}
+      <TouchableOpacity style={styles.addButton} onPress={addPerson}>
+        <Text style={styles.addText}>Add Person</Text>
+      </TouchableOpacity>
+
+      {/* GRID */}
       <View style={styles.grid}>
-        {peoples.map((people) => (
-          <View key={people} style={styles.tile}>
+        {peoples.map((person, index) => (
+          <View key={index} style={styles.tile}>
             <TouchableOpacity
               style={styles.tilePress}
               activeOpacity={0.8}
-              onPress={() => speakThePhrase(people)}
+              onPress={() => speakPerson(person.name)}
             >
+              {person.image ? (
+                <Image source={{ uri: person.image }} style={styles.cardImage} />
+              ) : (
+                <View style={styles.fallbackImage}>
+                  <Text style={styles.fallbackIcon}>👤</Text>
+                </View>
+              )}
+
               <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
-                {people}
+                {person.name}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.deleteButton}
-              onPress={() => removePeople(people)}
+              onPress={() => removePerson(person)}
             >
               <Text style={styles.deleteText}>Remove</Text>
             </TouchableOpacity>
@@ -84,6 +181,7 @@ export default function ParentPeople() {
         ))}
       </View>
 
+      {/* BACK */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.push("../parent-settings")}
@@ -94,6 +192,9 @@ export default function ParentPeople() {
   );
 }
 
+// ----------------------------------------
+// STYLES
+// ----------------------------------------
 const styles = StyleSheet.create({
   container: {
     paddingTop: 40,
@@ -101,6 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
+
   title: {
     fontSize: 32,
     fontWeight: "900",
@@ -113,13 +215,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  /* INPUT + ADD BUTTON */
+  imageButton: {
+    backgroundColor: "#60A5FA",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  imageButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  previewImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+
   addButton: {
     backgroundColor: "#22C55E",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 10,
     marginBottom: 20,
   },
   addText: {
@@ -128,7 +248,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  /* GRID */
   grid: {
     width: "90%",
     flexDirection: "row",
@@ -145,21 +264,42 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
   },
+
   tilePress: {
-    height: 80,
     width: "100%",
-    justifyContent: "center",
     alignItems: "center",
   },
+
+  cardImage: {
+    width: "100%",
+    height: 100,
+    resizeMode: "contain",
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+
+  fallbackImage: {
+    width: "100%",
+    height: 100,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  fallbackIcon: {
+    fontSize: 40,
+  },
+
   phrase: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     color: "#4F46E5",
     textAlign: "center",
   },
 
   deleteButton: {
-    marginTop: 10,
+    marginTop: 8,
     backgroundColor: "#EF4444",
     paddingVertical: 6,
     paddingHorizontal: 20,
@@ -170,7 +310,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  /* BACK BUTTON */
   backButton: {
     backgroundColor: "#4F46E5",
     paddingVertical: 14,

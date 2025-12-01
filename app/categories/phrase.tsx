@@ -2,57 +2,77 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function People() {
+// Hybrid phrase type
+type PhraseCard = {
+  text: string;
+  image?: string;
+};
+
+export default function Phrases() {
   const [childName, setChildName] = useState("Child");
-  const [phrases, setPhrases] = useState<string[]>([]);
+  const [phrases, setPhrases] = useState<PhraseCard[]>([]);
 
   useEffect(() => {
-    const loadName = async () => {
-      const saved = await AsyncStorage.getItem("childProfile");
-      if (saved) {
-        const profile = JSON.parse(saved);
+    const loadEverything = async () => {
+      // Load child name
+      const savedName = await AsyncStorage.getItem("childProfile");
+      if (savedName) {
+        const profile = JSON.parse(savedName);
         setChildName(profile.name);
       }
-    };
-     const loadPhrases = async () => {
-      const savedPhrases = await AsyncStorage.getItem("childPhrases");
-      if (savedPhrases) {
-        const childPhrases = JSON.parse(savedPhrases);
-        setPhrases(childPhrases.phrases || []);
-      } else {
-          const phrasesDefault = [
-              "Good Morning",
-              "Good Night",
-              "Please",
-              "Thank You",
-              "Help",
-              "Sorry",
-              "I Love You",
-              "Kiss",
-              "Hug",
-              "Play",
-              "I'm Hungry",
-              "I'm Thirsty",
-              "Toilet",
-            ];
 
-            setPhrases(phrasesDefault);
+      // Load saved phrases
+      const saved = await AsyncStorage.getItem("childPhrases");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        // New format → array of objects
+        if (Array.isArray(parsed.phrases) && typeof parsed.phrases[0] === "object") {
+          setPhrases(parsed.phrases);
+          return;
+        }
+
+        // Old format → array of strings → convert
+        if (Array.isArray(parsed.phrases) && typeof parsed.phrases[0] === "string") {
+          const converted = parsed.phrases.map((p: string) => ({ text: p }));
+          setPhrases(converted);
+          return;
+        }
       }
+
+      // Default values
+      setPhrases([
+        { text: "Good Morning" },
+        { text: "Good Night" },
+        { text: "Please" },
+        { text: "Thank You" },
+        { text: "Help" },
+        { text: "Sorry" },
+        { text: "I Love You" },
+        { text: "Kiss" },
+        { text: "Hug" },
+        { text: "Play" },
+        { text: "I'm Hungry" },
+        { text: "I'm Thirsty" },
+        { text: "Toilet" },
+      ]);
     };
-    loadPhrases();
-    loadName();
+
+    loadEverything();
   }, []);
 
-  const speakThePhrase = (word: string) => {
-    Speech.speak(word.toString(), {
-      rate: 1.0,
-      pitch: 1.0,
-    });
+  const speakPhrase = (text: string) => {
+    Speech.speak(text, { rate: 1.0, pitch: 1.0 });
   };
-
-  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -60,23 +80,32 @@ export default function People() {
       <Text style={styles.subtitle}>Tap a phrase, {childName}</Text>
 
       <View style={styles.grid}>
-        {phrases.map((phrase) => (
+        {phrases.map((card, index) => (
           <TouchableOpacity
-            key={phrase}
+            key={index} // ALWAYS UNIQUE NOW
             style={styles.tile}
             activeOpacity={0.8}
-            onPress={() => {
-              speakThePhrase(phrase);
-            }}
+            onPress={() => speakPhrase(card.text)}
           >
+            {card.image ? (
+              <Image source={{ uri: card.image }} style={styles.cardImage} />
+            ) : (
+              <View style={styles.fallback}>
+                <Text style={styles.fallbackIcon}>💬</Text>
+              </View>
+            )}
+
             <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
-              {phrase}
+              {card.text}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/child-categories")}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/child-categories")}
+      >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -94,7 +123,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     color: "#4F46E5",
-    marginBottom: 5,
   },
   subtitle: {
     fontSize: 18,
@@ -107,23 +135,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 30,   // extra space for easier back button access
+    marginBottom: 30,
   },
 
   tile: {
-    width: "45%",        // slightly smaller tiles
-    height: 100,         // was 120
+    width: "45%",
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     marginBottom: 20,
-    justifyContent: "center",
+    padding: 10,
     alignItems: "center",
-    paddingHorizontal: 8,
     elevation: 3,
   },
 
+  cardImage: {
+    width: "100%",
+    height: 90,
+    borderRadius: 12,
+    resizeMode: "contain",
+    marginBottom: 8,
+  },
+
+  fallback: {
+    width: "100%",
+    height: 90,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  fallbackIcon: {
+    fontSize: 40,
+  },
+
   phrase: {
-    fontSize: 22,        // was 28
+    fontSize: 22,
     fontWeight: "800",
     color: "#4F46E5",
     textAlign: "center",
@@ -134,8 +181,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 10,
-    marginBottom: 20,
   },
   backText: {
     color: "#fff",
