@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
 import { Label } from "@react-navigation/elements";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -45,8 +46,18 @@ export default function ParentSettings() {
         <Input placeholder="Age" value={age} onChangeText={setAge} />
 
         <Label style={styles.label}>Child Sex</Label>
-        <Input placeholder="Sex (Boy/Girl/Other)" value={sex} onChangeText={setSex} />
-
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={sex}
+            onValueChange={(value) => setSex(value)}
+            style={styles.picker}
+            dropdownIconColor="#4F46E5"
+          >
+            <Picker.Item label="Select..." value="" />
+            <Picker.Item label="Boy" value="Boy" />
+            <Picker.Item label="Girl" value="Girl" />
+          </Picker>
+        </View>
         <TouchableOpacity style={styles.button} onPress={saveProfile}>
           <Text style={styles.buttonText}>Save Profile</Text>
         </TouchableOpacity>
@@ -68,7 +79,7 @@ export default function ParentSettings() {
         >
           <Text style={styles.buttonText}>Phrases</Text>
         </TouchableOpacity>
-         <TouchableOpacity
+        <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/parents/food")}
         >
@@ -81,13 +92,13 @@ export default function ParentSettings() {
           <Text style={styles.buttonText}>Feelings</Text>
         </TouchableOpacity>
 
-          <TouchableOpacity
+        <TouchableOpacity
           style={styles.button}
           onPress={() => router.push("/parents/people")}
         >
           <Text style={styles.buttonText}>People</Text>
         </TouchableOpacity>
-        
+
       </View>
     </ScrollView>
   );
@@ -144,5 +155,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
+  },
+
+  pickerWrapper: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    marginTop: 5,
+    marginBottom: 10,
+  },
+
+  picker: {
+    height: 50,
+    width: "100%",
   },
 });

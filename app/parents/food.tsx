@@ -1,7 +1,9 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
+
 import { useEffect, useState } from "react";
 import {
   Image,
@@ -11,154 +13,168 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import FoodImagePicker from "../../components/FoodImagePicker";
+
 import Input from "../../components/input";
 
-// --------------------------------------
+// -----------------------------
 // TYPES
-// --------------------------------------
-type FoodItem = {
+// -----------------------------
+type FoodCard = {
   name: string;
-  image?: string; // file uri
-  icon?: string;  // MaterialCommunityIcons name
+  image?: string;
 };
 
-// --------------------------------------
-// MAIN SCREEN
-// --------------------------------------
+// -----------------------------
+// MAIN COMPONENT
+// -----------------------------
 export default function ParentFood() {
-  const [food, setFood] = useState<FoodItem[]>([]);
-  const [newFood, setNewFood] = useState<string>("");
+  const [food, setFood] = useState<FoodCard[]>([]);
+  const [newFood, setNewFood] = useState("");
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
 
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [pendingName, setPendingName] = useState<string>("");
-
-  // ----------------------------------
-  // LOAD SAVED FOOD
-  // ----------------------------------
+  // -----------------------------
+  // LOAD DATA
+  // -----------------------------
   useEffect(() => {
     const loadData = async () => {
       const saved = await AsyncStorage.getItem("childFood");
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      if (!saved) return;
 
-        // If old format = array of strings → convert
-        if (Array.isArray(parsed.food) && typeof parsed.food[0] === "string") {
-          const converted = parsed.food.map((name: string) => ({ name }));
-          setFood(converted);
-        } else {
-          setFood(parsed.food || []);
-        }
+      const parsed = JSON.parse(saved);
+
+      if (Array.isArray(parsed.food) && typeof parsed.food[0] === "object") {
+        setFood(parsed.food);
+      } else {
+        const converted = (parsed.food || []).map((name: string) => ({ name }));
+        setFood(converted);
       }
     };
     loadData();
   }, []);
 
-  // ----------------------------------
-  // SPEAK WORD
-  // ----------------------------------
-  const speakTheFood = (word: string) => {
-    Speech.speak(word, { rate: 1.0, pitch: 1.0 });
+  // -----------------------------
+  // SPEAK
+  // -----------------------------
+  const speakFood = (text: string) => {
+    Speech.speak(text, { rate: 1.0, pitch: 1.0 });
   };
 
-  // ----------------------------------
-  // STEP 1: Add name → then choose image/icon
-  // ----------------------------------
-  const beginAddFood = () => {
-    const name = newFood.trim();
-    if (!name) return;
+  // -----------------------------
+  // PICK IMAGE (Gallery only)
+  // -----------------------------
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      alert("Permission required to pick an image!");
+      return;
+    }
 
-    setPendingName(name);
-    setNewFood("");
-    setPickerVisible(true);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (result.canceled) return;
+
+    const localUri = result.assets[0].uri;
+
+    // Create folder
+    const folder = FileSystem.documentDirectory + "foodImages/";
+    await FileSystem.makeDirectoryAsync(folder, { intermediates: true });
+
+    // Copy file permanently
+    const fileName = `food_${Date.now()}.jpg`;
+    const newPath = folder + fileName;
+
+    await FileSystem.copyAsync({
+      from: localUri,
+      to: newPath,
+    });
+
+    setPickedImage(newPath);
   };
 
-  // ----------------------------------
-  // STEP 2: After selecting image/icon
-  // ----------------------------------
-  const finishAddFood = async (data: { image?: string; icon?: string }) => {
-    const item: FoodItem = {
-      name: pendingName,
-      ...data,
+  // -----------------------------
+  // ADD FOOD
+  // -----------------------------
+  const addFood = async () => {
+    if (!newFood.trim()) return;
+
+    const card: FoodCard = {
+      name: newFood.trim(),
+      image: pickedImage || undefined,
     };
 
-    const updated = [...food, item];
+    const updated = [...food, card];
+    setFood(updated);
+
+    setNewFood("");
+    setPickedImage(null);
+
+    await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
+  };
+
+  // -----------------------------
+  // REMOVE
+  // -----------------------------
+  const removeFood = async (item: FoodCard) => {
+    const updated = food.filter((f) => f.name !== item.name);
     setFood(updated);
 
     await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
   };
 
-  // ----------------------------------
-  // REMOVE (FIXED)
-  // ----------------------------------
-  const removeFood = async (toDelete: FoodItem) => {
-    const updated = food.filter((p) => p.name !== toDelete.name);
-    setFood(updated);
-    await AsyncStorage.setItem("childFood", JSON.stringify({ food: updated }));
-  };
-
-  // --------------------------------------
-  // RENDER
-  // --------------------------------------
+  // -----------------------------
+  // UI
+  // -----------------------------
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Manage Food & Drink</Text>
-      <Text style={styles.subtitle}>Tap a card to hear it spoken</Text>
+      <Text style={styles.subtitle}>Tap a card to hear it aloud</Text>
 
+      {/* INPUT */}
       <Input
-        placeholder="Add a new food or drink"
+        placeholder="Enter food or drink"
         value={newFood}
         onChangeText={setNewFood}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={beginAddFood}>
-        <Text style={styles.addText}>Next: Choose Picture</Text>
+      {/* PICK IMAGE */}
+      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+        <Text style={styles.imageButtonText}>
+          {pickedImage ? "Change Image" : "Pick Image (Optional)"}
+        </Text>
       </TouchableOpacity>
 
-      {/* IMAGE PICKER MODAL */}
-      <FoodImagePicker
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
-        onSelect={(data) => {
-          setPickerVisible(false);
-          finishAddFood(data);
-        }}
-      />
+      {pickedImage && (
+        <Image source={{ uri: pickedImage }} style={styles.previewImage} />
+      )}
 
-      {/* FLASHCARD GRID */}
+      {/* ADD BUTTON */}
+      <TouchableOpacity style={styles.addButton} onPress={addFood}>
+        <Text style={styles.addText}>Add Food</Text>
+      </TouchableOpacity>
+
+      {/* GRID */}
       <View style={styles.grid}>
         {food.map((item, index) => (
           <View key={index} style={styles.card}>
             <TouchableOpacity
               style={styles.cardPress}
               activeOpacity={0.8}
-              onPress={() => speakTheFood(item.name)}
+              onPress={() => speakFood(item.name)}
             >
-              {/* IMAGE / ICON */}
               {item.image ? (
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.cardImage}
-                />
-              ) : item.icon ? (
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={70}
-                  color="#4F46E5"
-                />
+                <Image source={{ uri: item.image }} style={styles.cardImage} />
               ) : (
-                <MaterialCommunityIcons
-                  name="image-off"
-                  size={70}
-                  color="#9CA3AF"
-                />
+                <View style={styles.fallbackImage}>
+                  <Text style={styles.fallbackIcon}>🍽️</Text>
+                </View>
               )}
 
-              {/* NAME */}
               <Text style={styles.cardText}>{item.name}</Text>
             </TouchableOpacity>
 
-            {/* DELETE BUTTON */}
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={() => removeFood(item)}
@@ -180,20 +196,22 @@ export default function ParentFood() {
   );
 }
 
-// --------------------------------------
+// -----------------------------
 // STYLES
-// --------------------------------------
+// -----------------------------
 const styles = StyleSheet.create({
   container: {
     paddingTop: 40,
-    paddingBottom: 40,
+    paddingBottom: 30,
     backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
+
   title: {
     fontSize: 32,
     fontWeight: "900",
     color: "#4F46E5",
+    marginBottom: 5,
   },
   subtitle: {
     fontSize: 18,
@@ -201,12 +219,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
+  imageButton: {
+    backgroundColor: "#60A5FA",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  imageButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  previewImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+
   addButton: {
     backgroundColor: "#22C55E",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 10,
     marginBottom: 20,
   },
   addText: {
@@ -222,36 +259,51 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  /* FLASHCARDS */
   card: {
     width: "48%",
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    marginBottom: 25,
-    elevation: 4,
-    padding: 12,
+    marginBottom: 20,
+    elevation: 3,
+    padding: 10,
     alignItems: "center",
   },
+
   cardPress: {
     width: "100%",
     alignItems: "center",
   },
+
   cardImage: {
-    width: "90%",
+    width: "100%",
     height: 100,
     resizeMode: "contain",
-    borderRadius: 10,
+    borderRadius: 12,
+    marginBottom: 8,
   },
+
+  fallbackImage: {
+    width: "100%",
+    height: 100,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  fallbackIcon: {
+    fontSize: 40,
+  },
+
   cardText: {
-    marginTop: 10,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     color: "#4F46E5",
     textAlign: "center",
   },
 
   deleteButton: {
-    marginTop: 10,
+    marginTop: 8,
     backgroundColor: "#EF4444",
     paddingVertical: 6,
     paddingHorizontal: 20,
@@ -268,6 +320,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
+    marginBottom: 20,
   },
   backText: {
     color: "#fff",

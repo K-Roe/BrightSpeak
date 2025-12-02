@@ -11,14 +11,18 @@ import {
   View,
 } from "react-native";
 
+// ⭐ THEME SUPPORT
+import { getChildTheme } from "../theme/childTheme";
+
 type PeopleCard = {
   name: string;
-  image?: string; // local image URI
+  image?: string;
   icon?: string;
 };
 
 export default function People() {
   const [childName, setChildName] = useState("Child");
+  const [sex, setSex] = useState("");
   const [peoples, setPeoples] = useState<PeopleCard[]>([]);
 
   useEffect(() => {
@@ -27,45 +31,53 @@ export default function People() {
       if (saved) {
         const profile = JSON.parse(saved);
         setChildName(profile.name);
+        setSex(profile.sex || "");
       }
     };
 
     const loadPeople = async () => {
       const saved = await AsyncStorage.getItem("childPeople");
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
-
-        // New format (array of objects)
-        if (Array.isArray(parsed.peoples) && typeof parsed.peoples[0] === "object") {
-          setPeoples(parsed.peoples);
-        } else {
-          // Old format: convert ["Mummy","Daddy"] → { name }
-          const converted = (parsed.peoples || []).map((name: string) => ({
-            name,
-          }));
-          setPeoples(converted);
-        }
-      } else {
-        // Default list (converted to new format)
-        const defaults = [
-          "Mummy",
-          "Daddy",
-          "Brother",
-          "Sister",
-          "Nanna",
-          "Granddad",
-          "Friend",
-          "Teacher",
-        ].map((name) => ({ name }));
-
-        setPeoples(defaults);
+      if (!saved) {
+        loadDefaults();
+        return;
       }
+
+      const parsed = JSON.parse(saved);
+
+      if (!Array.isArray(parsed.peoples) || parsed.peoples.length === 0) {
+        loadDefaults();
+        return;
+      }
+
+      if (typeof parsed.peoples[0] === "object") {
+        setPeoples(parsed.peoples);
+        return;
+      }
+
+      const converted = parsed.peoples.map((name: string) => ({ name }));
+      setPeoples(converted);
     };
 
     loadPeople();
     loadName();
   }, []);
+
+  // Default fallback list
+  function loadDefaults() {
+    const defaults = [
+      "Mummy",
+      "Daddy",
+      "Brother",
+      "Sister",
+      "Nanna",
+      "Granddad",
+      "Friend",
+      "Teacher",
+    ].map((name) => ({ name }));
+
+    setPeoples(defaults);
+  }
 
   const speakThePhrase = (text: string) => {
     Speech.speak(text, {
@@ -74,16 +86,27 @@ export default function People() {
     });
   };
 
+  // 🌈 Apply theme based on sex
+  const theme = getChildTheme(sex);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>People</Text>
-      <Text style={styles.subtitle}>Tap a person, {childName}</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.bg },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.title }]}>People</Text>
+
+      <Text style={[styles.subtitle, { color: theme.label }]}>
+        Tap a person, {childName}
+      </Text>
 
       <View style={styles.grid}>
         {peoples.map((person, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.tile}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.8}
             onPress={() => speakThePhrase(person.name)}
           >
@@ -91,12 +114,23 @@ export default function People() {
             {person.image ? (
               <Image source={{ uri: person.image }} style={styles.cardImage} />
             ) : (
-              <View style={styles.fallbackImage}>
-                <Text style={styles.fallbackIcon}>👤</Text>
+              <View
+                style={[
+                  styles.fallbackImage,
+                  { backgroundColor: theme.tileBg },
+                ]}
+              >
+                <Text style={[styles.fallbackIcon, { color: theme.label }]}>
+                  👤
+                </Text>
               </View>
             )}
 
-            <Text style={styles.people} numberOfLines={2} adjustsFontSizeToFit>
+            <Text
+              style={[styles.people, { color: theme.label }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+            >
               {person.name}
             </Text>
           </TouchableOpacity>
@@ -104,7 +138,7 @@ export default function People() {
       </View>
 
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
         <Text style={styles.backText}>Back</Text>
@@ -120,20 +154,17 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
 
   title: {
     fontSize: 32,
     fontWeight: "900",
-    color: "#4F46E5",
     marginBottom: 5,
   },
 
   subtitle: {
     fontSize: 18,
-    color: "#6B7280",
     marginBottom: 20,
   },
 
@@ -147,7 +178,6 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "45%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     marginBottom: 20,
     padding: 10,
@@ -166,12 +196,12 @@ const styles = StyleSheet.create({
   fallbackImage: {
     width: "100%",
     height: 90,
-    backgroundColor: "#E2E8F0",
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
   },
+
   fallbackIcon: {
     fontSize: 40,
   },
@@ -179,16 +209,15 @@ const styles = StyleSheet.create({
   people: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
   },
+
   backText: {
     color: "#fff",
     fontSize: 18,

@@ -5,6 +5,9 @@ import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+// ❤️ THEME
+import { getChildTheme } from "../theme/childTheme";
+
 // Type for the new hybrid card system
 type FoodItem = {
   name: string;
@@ -14,57 +17,63 @@ type FoodItem = {
 
 export default function Food() {
   const [childName, setChildName] = useState("Child");
+  const [sex, setSex] = useState("");
   const [foods, setFoods] = useState<FoodItem[]>([]);
 
-  // ---------------------------------------------------
+  //---------------------------------------------------
   // LOAD CHILD NAME + FOOD ITEMS
-  // ---------------------------------------------------
+  //---------------------------------------------------
   useEffect(() => {
     const loadAll = async () => {
-      // child name
       const saved = await AsyncStorage.getItem("childProfile");
       if (saved) {
-        setChildName(JSON.parse(saved).name);
+        const profile = JSON.parse(saved);
+        setChildName(profile.name);
+        setSex(profile.sex || "");
       }
 
-      // food items
       const savedFood = await AsyncStorage.getItem("childFood");
-      if (savedFood) {
-        const data = JSON.parse(savedFood);
 
-        // New format → full objects
-        if (Array.isArray(data.food) && typeof data.food[0] === "object") {
-          setFoods(data.food);
-        } else {
-          // Old format → strings → convert to objects
-          const fallback = (data.food || []).map((f: string) => ({ name: f }));
-          setFoods(fallback);
-        }
-
-      } else {
-        // DEFAULT FOOD options
-        const defaultFoods = [
-          { name: "Water", icon: "cup-water" },
-          { name: "Juice", icon: "cup" },
-          { name: "Milk", icon: "cow" },
-          { name: "Apple", icon: "apple" },
-          { name: "Banana", icon: "food-apple" },
-          { name: "Sandwich", icon: "food" },
-          { name: "Ice Cream", icon: "ice-cream" },
-          { name: "Breakfast", icon: "coffee" },
-          { name: "Lunch", icon: "silverware-fork-knife" },
-          { name: "Dinner", icon: "food-steak" },
-        ];
-        setFoods(defaultFoods);
+      if (!savedFood) {
+        loadDefaults();
+        return;
       }
+
+      const data = JSON.parse(savedFood);
+
+      if (!Array.isArray(data.food) || data.food.length === 0) {
+        loadDefaults();
+        return;
+      }
+
+      setFoods(data.food);
     };
 
     loadAll();
   }, []);
 
-  // ---------------------------------------------------
+  //--------------------------------
+  // Helper: Default fallback list
+  //--------------------------------
+  function loadDefaults() {
+    const defaults = [
+      { name: "Water", icon: "cup-water" },
+      { name: "Juice", icon: "cup" },
+      { name: "Milk", icon: "cow" },
+      { name: "Apple", icon: "apple" },
+      { name: "Sandwich", icon: "food" },
+      { name: "Ice Cream", icon: "ice-cream" },
+      { name: "Breakfast", icon: "coffee" },
+      { name: "Lunch", icon: "silverware-fork-knife" },
+      { name: "Dinner", icon: "food-steak" },
+    ];
+
+    setFoods(defaults);
+  }
+
+  //---------------------------------------------------
   // SPEAK
-  // ---------------------------------------------------
+  //---------------------------------------------------
   const speakTheFood = (word: string) => {
     Speech.speak(word, {
       rate: 1.0,
@@ -72,19 +81,34 @@ export default function Food() {
     });
   };
 
-  // ---------------------------------------------------
+  //---------------------------------------------------
+  // THEME BASED ON SEX
+  //---------------------------------------------------
+  const theme = getChildTheme(sex);
+
+  //---------------------------------------------------
   // RENDER
-  // ---------------------------------------------------
+  //---------------------------------------------------
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Food & Drink</Text>
-      <Text style={styles.subtitle}>Tap a card, {childName}</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.bg },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.title }]}>
+        Food & Drink
+      </Text>
+
+      <Text style={[styles.subtitle, { color: theme.label }]}>
+        Tap a card, {childName}
+      </Text>
 
       <View style={styles.grid}>
         {foods.map((item: FoodItem, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.tile}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.8}
             onPress={() => speakTheFood(item.name)}
           >
@@ -98,29 +122,31 @@ export default function Food() {
               <MaterialCommunityIcons
                 name={item.icon}
                 size={60}
-                color="#4F46E5"
+                color={theme.label}
                 style={{ marginBottom: 10 }}
               />
             )}
 
-            {/* FALLBACK BOX IF NEITHER */}
+            {/* FALLBACK BOX */}
             {!item.image && !item.icon && (
-              <View style={styles.fallbackIcon}>
+              <View style={[styles.fallbackIcon, { backgroundColor: theme.tileBg }]}>
                 <MaterialCommunityIcons
                   name="food"
                   size={50}
-                  color="#94A3B8"
+                  color={theme.label}
                 />
               </View>
             )}
 
-            <Text style={styles.foodName}>{item.name}</Text>
+            <Text style={[styles.foodName, { color: theme.label }]}>
+              {item.name}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
         <Text style={styles.backText}>Back</Text>
@@ -129,26 +155,24 @@ export default function Food() {
   );
 }
 
-// ---------------------------------------------------
+//---------------------------------------------------
 // STYLES
-// ---------------------------------------------------
+//---------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
 
   title: {
     fontSize: 32,
     fontWeight: "900",
-    color: "#4F46E5",
     marginBottom: 5,
   },
+
   subtitle: {
     fontSize: 18,
-    color: "#6B7280",
     marginBottom: 20,
   },
 
@@ -161,7 +185,6 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     marginBottom: 20,
     padding: 12,
@@ -181,7 +204,6 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 15,
-    backgroundColor: "#E2E8F0",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
@@ -190,18 +212,17 @@ const styles = StyleSheet.create({
   foodName: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
     marginBottom: 20,
   },
+
   backText: {
     color: "#fff",
     fontSize: 18,

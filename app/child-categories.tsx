@@ -3,6 +3,9 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+// Import the theme helper
+import { getChildTheme } from "./theme/childTheme";
+
 const categories = [
   {
     id: "food",
@@ -10,7 +13,7 @@ const categories = [
     image: { uri: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png" },
     route: "/categories/food",
   },
-   {
+  {
     id: "people",
     label: "People",
     image: { uri: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png" },
@@ -55,6 +58,7 @@ const categories = [
 
 export default function ChildCategories() {
   const [childName, setChildName] = useState("Child");
+  const [sex, setSex] = useState("");
 
   useEffect(() => {
     const loadName = async () => {
@@ -62,21 +66,31 @@ export default function ChildCategories() {
       if (saved) {
         const profile = JSON.parse(saved);
         setChildName(profile.name);
+        setSex(profile.sex || "");
       }
     };
     loadName();
   }, []);
 
+  const theme = getChildTheme(sex);
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Hello, {childName}!</Text>
-      <Text style={styles.title}>Choose One</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.bg },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.title }]}>
+        Hello, {childName}!
+      </Text>
+      <Text style={[styles.title, { color: theme.title }]}>Choose One</Text>
 
       <View style={styles.grid}>
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
-            style={styles.tile}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.8}
             onPress={() => {
               if (cat.route) {
@@ -85,12 +99,17 @@ export default function ChildCategories() {
             }}
           >
             <Image source={cat.image} style={styles.icon} />
-            <Text style={styles.label}>{cat.label}</Text>
+            <Text style={[styles.label, { color: theme.label }]}>
+              {cat.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push("/")}>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: theme.buttonBg }]}
+        onPress={() => router.push("/")}
+      >
         <Text style={styles.buttonText}>Back</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -101,14 +120,12 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     paddingBottom: 40,
-    backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
   title: {
     fontSize: 30,
     fontWeight: "700",
     marginBottom: 10,
-    color: "#1F2937",
   },
   grid: {
     width: "90%",
@@ -119,7 +136,6 @@ const styles = StyleSheet.create({
   tile: {
     width: "40%",
     height: 140,
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     marginBottom: 20,
     justifyContent: "center",
@@ -135,10 +151,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937",
   },
   button: {
-    backgroundColor: "#4F46E5",
     width: "80%",
     paddingVertical: 14,
     borderRadius: 12,

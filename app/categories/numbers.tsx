@@ -4,8 +4,12 @@ import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+// ⭐ THEME SUPPORT
+import { getChildTheme } from "../theme/childTheme";
+
 export default function Numbers() {
   const [childName, setChildName] = useState("Child");
+  const [sex, setSex] = useState("");
 
   useEffect(() => {
     const loadName = async () => {
@@ -13,13 +17,15 @@ export default function Numbers() {
       if (saved) {
         const profile = JSON.parse(saved);
         setChildName(profile.name);
+        setSex(profile.sex || "");
       }
     };
     loadName();
   }, []);
 
-    const speakNumber = (num: number) => {
-    // Say the number as a word or just the digit
+  const theme = getChildTheme(sex);
+
+  const speakNumber = (num: number) => {
     Speech.speak(num.toString(), {
       rate: 1.0,
       pitch: 1.0,
@@ -29,26 +35,39 @@ export default function Numbers() {
   const numbers = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Numbers</Text>
-      <Text style={styles.subtitle}>Tap a number, {childName}</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.bg },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.title }]}>
+        Numbers
+      </Text>
+
+      <Text style={[styles.subtitle, { color: theme.label }]}>
+        Tap a number, {childName}
+      </Text>
 
       <View style={styles.grid}>
-        {numbers.map(num => (
+        {numbers.map((num) => (
           <TouchableOpacity
             key={num}
-            style={styles.tile}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.8}
-            onPress={() => {
-                speakNumber(num);
-            }}
+            onPress={() => speakNumber(num)}
           >
-            <Text style={styles.number}>{num}</Text>
+            <Text style={[styles.number, { color: theme.label }]}>
+              {num}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/child-categories")}>
+      <TouchableOpacity
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
+        onPress={() => router.push("/child-categories")}
+      >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -59,18 +78,15 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
   title: {
     fontSize: 32,
     fontWeight: "900",
-    color: "#4F46E5",
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 18,
-    color: "#6B7280",
     marginBottom: 20,
   },
   grid: {
@@ -78,12 +94,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-
   },
   tile: {
-    width: "28%",      
+    width: "28%",
     aspectRatio: 1,
-    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     marginBottom: 20,
     justifyContent: "center",
@@ -91,12 +105,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   number: {
-    fontSize: 32,      
+    fontSize: 32,
     fontWeight: "800",
-    color: "#4F46E5",
   },
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,

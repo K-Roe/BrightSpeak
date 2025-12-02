@@ -12,6 +12,9 @@ import {
   View,
 } from "react-native";
 
+// ⭐ Theme import
+import { getChildTheme } from "../theme/childTheme";
+
 // Hybrid card type
 type FeelingItem = {
   name: string;
@@ -21,52 +24,73 @@ type FeelingItem = {
 
 export default function Feelings() {
   const [childName, setChildName] = useState("Child");
+  const [sex, setSex] = useState("");
   const [feelings, setFeelings] = useState<FeelingItem[]>([]);
 
   useEffect(() => {
     const loadAll = async () => {
-      // Load child name
+      // Load child profile
       const savedName = await AsyncStorage.getItem("childProfile");
       if (savedName) {
-        setChildName(JSON.parse(savedName).name);
+        const profile = JSON.parse(savedName);
+        setChildName(profile.name);
+        setSex(profile.sex || "");
       }
 
-      // Load feelings
+      // Load saved feelings
       const savedFeelingData = await AsyncStorage.getItem("childFeelings");
-      if (savedFeelingData) {
-        const parsed = JSON.parse(savedFeelingData);
 
-        // If already the new hybrid format
-        if (Array.isArray(parsed.feelings) && typeof parsed.feelings[0] === "object") {
-          setFeelings(parsed.feelings);
-        } else {
-          // Convert old string-only values
-          const converted = (parsed.feelings || []).map((f: string) => ({ name: f }));
-          setFeelings(converted);
-        }
-      } else {
-        // Default hybrid list with icons
-        const defaults: FeelingItem[] = [
-          { name: "I Feel Happy", icon: "emoticon-happy" },
-          { name: "I Feel Sad", icon: "emoticon-sad" },
-          { name: "I Feel Angry", icon: "emoticon-angry" },
-          { name: "I Feel Scared", icon: "emoticon-frown" },
-          { name: "I Feel Tired", icon: "sleep" },
-          { name: "I Feel Sick", icon: "emoticon-cry" },
-          { name: "I Feel Excited", icon: "emoticon-excited" },
-          { name: "I Feel Brave", icon: "shield-star" },
-          { name: "I Feel Lonely", icon: "emoticon-neutral" },
-          { name: "I Feel Silly", icon: "emoticon-wink" },
-          { name: "I Feel Hungry", icon: "food" },
-          { name: "I Feel Thirsty", icon: "cup-water" },
-        ];
-
-        setFeelings(defaults);
+      if (!savedFeelingData) {
+        loadDefaults();
+        return;
       }
+
+      const parsed = JSON.parse(savedFeelingData);
+
+      // If no array or empty → defaults
+      if (!Array.isArray(parsed.feelings) || parsed.feelings.length === 0) {
+        loadDefaults();
+        return;
+      }
+
+      // New format → objects
+      if (typeof parsed.feelings[0] === "object") {
+        setFeelings(parsed.feelings);
+        return;
+      }
+
+      // Old format → convert strings
+      const converted = parsed.feelings.map((f: string) => ({ name: f }));
+      setFeelings(converted);
     };
 
     loadAll();
   }, []);
+
+  // THEME
+  const theme = getChildTheme(sex);
+
+  // ----------------------------------
+  // DEFAULT FEELINGS
+  // ----------------------------------
+  function loadDefaults() {
+    const defaults: FeelingItem[] = [
+      { name: "I Feel Happy", icon: "emoticon-happy" },
+      { name: "I Feel Sad", icon: "emoticon-sad" },
+      { name: "I Feel Angry", icon: "emoticon-angry" },
+      { name: "I Feel Scared", icon: "emoticon-frown" },
+      { name: "I Feel Tired", icon: "sleep" },
+      { name: "I Feel Sick", icon: "emoticon-cry" },
+      { name: "I Feel Excited", icon: "emoticon-excited" },
+      { name: "I Feel Brave", icon: "shield-star" },
+      { name: "I Feel Lonely", icon: "emoticon-neutral" },
+      { name: "I Feel Silly", icon: "emoticon-wink" },
+      { name: "I Feel Hungry", icon: "food" },
+      { name: "I Feel Thirsty", icon: "cup-water" },
+    ];
+
+    setFeelings(defaults);
+  }
 
   // Speak feeling on tap
   const speakTheFeeling = (word: string) => {
@@ -77,45 +101,52 @@ export default function Feelings() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Feelings</Text>
-      <Text style={styles.subtitle}>Tap a feeling, {childName}</Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: theme.bg },
+      ]}
+    >
+      <Text style={[styles.title, { color: theme.title }]}>Feelings</Text>
+      <Text style={[styles.subtitle, { color: theme.label }]}>
+        Tap a feeling, {childName}
+      </Text>
 
       <View style={styles.grid}>
         {feelings.map((f: FeelingItem, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.tile}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.8}
             onPress={() => speakTheFeeling(f.name)}
           >
-            {/* Use image if present */}
+            {/* Image */}
             {f.image && (
               <Image source={{ uri: f.image }} style={styles.image} />
             )}
 
-            {/* Otherwise use icon */}
+            {/* Icon */}
             {!f.image && f.icon && (
               <MaterialCommunityIcons
                 name={f.icon}
                 size={60}
-                color="#4F46E5"
+                color={theme.label}
                 style={{ marginBottom: 10 }}
               />
             )}
 
-            {/* Fallback grey box */}
+            {/* Fallback */}
             {!f.image && !f.icon && (
-              <View style={styles.fallbackIcon}>
+              <View style={[styles.fallbackIcon, { backgroundColor: theme.tileBg }]}>
                 <MaterialCommunityIcons
                   name="emoticon-outline"
                   size={50}
-                  color="#94A3B8"
+                  color={theme.label}
                 />
               </View>
             )}
 
-            <Text style={styles.feel} numberOfLines={2} adjustsFontSizeToFit>
+            <Text style={[styles.feel, { color: theme.label }]} numberOfLines={2}>
               {f.name}
             </Text>
           </TouchableOpacity>
@@ -123,7 +154,7 @@ export default function Feelings() {
       </View>
 
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
         <Text style={styles.backText}>Back</Text>
@@ -136,19 +167,17 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 50,
     paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
     alignItems: "center",
   },
 
   title: {
     fontSize: 32,
     fontWeight: "900",
-    color: "#4F46E5",
     marginBottom: 5,
   },
+
   subtitle: {
     fontSize: 18,
-    color: "#6B7280",
     marginBottom: 20,
   },
 
@@ -161,7 +190,6 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     marginBottom: 20,
     padding: 12,
@@ -181,7 +209,6 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 12,
-    backgroundColor: "#E2E8F0",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
@@ -190,12 +217,10 @@ const styles = StyleSheet.create({
   feel: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
