@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 
 import Input from "../../components/input";
+import { getChildTheme } from "../theme/childTheme";
 
 // -----------------------------
 // TYPES
@@ -31,12 +31,23 @@ export default function ParentFood() {
   const [food, setFood] = useState<FoodCard[]>([]);
   const [newFood, setNewFood] = useState("");
   const [pickedImage, setPickedImage] = useState<string | null>(null);
+  const [sex, setSex] = useState("");
+  const [childName, setChildName] = useState("Child");
+
+  const theme = getChildTheme(sex);
 
   // -----------------------------
-  // LOAD DATA
+  // LOAD DATA + PROFILE
   // -----------------------------
   useEffect(() => {
     const loadData = async () => {
+      const savedProfile = await AsyncStorage.getItem("childProfile");
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        setSex(profile.sex || "");
+        setChildName(profile.name || "Child");
+      }
+
       const saved = await AsyncStorage.getItem("childFood");
       if (!saved) return;
 
@@ -49,6 +60,7 @@ export default function ParentFood() {
         setFood(converted);
       }
     };
+
     loadData();
   }, []);
 
@@ -60,7 +72,7 @@ export default function ParentFood() {
   };
 
   // -----------------------------
-  // PICK IMAGE (Gallery only)
+  // PICK IMAGE
   // -----------------------------
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -70,28 +82,14 @@ export default function ParentFood() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      quality: 0.9,
     });
 
-    if (result.canceled) return;
-
-    const localUri = result.assets[0].uri;
-
-    // Create folder
-    const folder = FileSystem.documentDirectory + "foodImages/";
-    await FileSystem.makeDirectoryAsync(folder, { intermediates: true });
-
-    // Copy file permanently
-    const fileName = `food_${Date.now()}.jpg`;
-    const newPath = folder + fileName;
-
-    await FileSystem.copyAsync({
-      from: localUri,
-      to: newPath,
-    });
-
-    setPickedImage(newPath);
+    if (!result.canceled) {
+      setPickedImage(result.assets[0].uri);
+    }
   };
 
   // -----------------------------
@@ -128,51 +126,84 @@ export default function ParentFood() {
   // UI
   // -----------------------------
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage Food & Drink</Text>
-      <Text style={styles.subtitle}>Tap a card to hear it aloud</Text>
-
-      {/* INPUT */}
-      <Input
-        placeholder="Enter food or drink"
-        value={newFood}
-        onChangeText={setNewFood}
-      />
-
-      {/* PICK IMAGE */}
-      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageButtonText}>
-          {pickedImage ? "Change Image" : "Pick Image (Optional)"}
+    <ScrollView
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
+    >
+      {/* HEADER BANNER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>🍎</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Food & Drink for {childName}
         </Text>
-      </TouchableOpacity>
+      </View>
 
-      {pickedImage && (
-        <Image source={{ uri: pickedImage }} style={styles.previewImage} />
-      )}
+      {/* INPUT CARD */}
+      <View style={[styles.card, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.sectionTitle, { color: theme.label }]}>
+          Add Food or Drink
+        </Text>
 
-      {/* ADD BUTTON */}
-      <TouchableOpacity style={styles.addButton} onPress={addFood}>
-        <Text style={styles.addText}>Add Food</Text>
-      </TouchableOpacity>
+        <Input
+          placeholder="Enter food or drink"
+          value={newFood}
+          onChangeText={setNewFood}
+        />
 
-      {/* GRID */}
+        <TouchableOpacity
+          style={[styles.imageButton, { backgroundColor: theme.buttonBg }]}
+          onPress={pickImage}
+        >
+          <Text style={styles.imageButtonText}>
+            {pickedImage ? "Change Image" : "Add Image (Optional)"}
+          </Text>
+        </TouchableOpacity>
+
+        {pickedImage && (
+          <Image source={{ uri: pickedImage }} style={styles.previewImage} />
+        )}
+
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: theme.buttonBg }]}
+          onPress={addFood}
+        >
+          <Text style={styles.addText}>Add Food</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* FOOD GRID */}
       <View style={styles.grid}>
-        {food.map((item, index) => (
-          <View key={index} style={styles.card}>
+        {food.map((item, idx) => (
+          <View
+            key={idx}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
+          >
             <TouchableOpacity
-              style={styles.cardPress}
+              style={styles.tilePress}
               activeOpacity={0.8}
               onPress={() => speakFood(item.name)}
             >
               {item.image ? (
                 <Image source={{ uri: item.image }} style={styles.cardImage} />
               ) : (
-                <View style={styles.fallbackImage}>
-                  <Text style={styles.fallbackIcon}>🍽️</Text>
+                <View
+                  style={[
+                    styles.fallbackImage,
+                    { backgroundColor: theme.bg },
+                  ]}
+                >
+                  <Text style={[styles.fallbackIcon, { color: theme.label }]}>
+                    🍽️
+                  </Text>
                 </View>
               )}
 
-              <Text style={styles.cardText}>{item.name}</Text>
+              <Text
+                style={[styles.cardText, { color: theme.label }]}
+                numberOfLines={2}
+              >
+                {item.name}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -185,44 +216,62 @@ export default function ParentFood() {
         ))}
       </View>
 
-      {/* BACK */}
+      {/* BACK BUTTON */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("../parent-settings")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// -----------------------------
-// STYLES
-// -----------------------------
+/* ----------------------------- */
+/* STYLES */
+/* ----------------------------- */
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
-    paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
+    paddingTop: 30,
+    paddingBottom: 50,
     alignItems: "center",
+    minHeight: "100%", // ★ ensures theme fills screen
   },
 
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#4F46E5",
-    marginBottom: 5,
+  banner: {
+    width: "100%",
+    padding: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
   },
-  subtitle: {
-    fontSize: 18,
-    color: "#6B7280",
-    marginBottom: 20,
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 28,
+    fontWeight: "900",
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 15,
+  },
+
+  card: {
+    width: "90%",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 30,
+    elevation: 3,
   },
 
   imageButton: {
-    backgroundColor: "#60A5FA",
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
     borderRadius: 12,
     marginTop: 10,
     marginBottom: 10,
@@ -232,19 +281,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+
   previewImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
 
   addButton: {
-    backgroundColor: "#22C55E",
     paddingVertical: 12,
-    paddingHorizontal: 40,
     borderRadius: 12,
-    marginBottom: 20,
+    marginTop: 5,
+    alignItems: "center",
   },
   addText: {
     color: "#fff",
@@ -259,17 +309,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  card: {
+  tile: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
+    padding: 12,
     marginBottom: 20,
     elevation: 3,
-    padding: 10,
     alignItems: "center",
   },
 
-  cardPress: {
+  tilePress: {
     width: "100%",
     alignItems: "center",
   },
@@ -277,28 +326,26 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 100,
-    resizeMode: "contain",
     borderRadius: 12,
     marginBottom: 8,
+    resizeMode: "cover",
   },
 
   fallbackImage: {
     width: "100%",
     height: 100,
-    backgroundColor: "#E2E8F0",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
   fallbackIcon: {
-    fontSize: 40,
+    fontSize: 42,
   },
 
   cardText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
@@ -315,7 +362,6 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -325,6 +371,6 @@ const styles = StyleSheet.create({
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

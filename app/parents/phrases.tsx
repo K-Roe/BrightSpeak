@@ -11,25 +11,38 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import Input from "../../components/input";
+import { getChildTheme } from "../theme/childTheme";
 
 type PhraseCard = {
   text: string;
-  image?: string; // local URI
+  image?: string;
 };
 
 export default function ParentPhrases() {
   const [phrases, setPhrases] = useState<PhraseCard[]>([]);
   const [newPhrase, setNewPhrase] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [sex, setSex] = useState("");
+  const [childName, setChildName] = useState("Child");
 
+  const theme = getChildTheme(sex);
+
+  // Load data + theme profile
   useEffect(() => {
-    const loadData = async () => {
+    const loadAll = async () => {
+      const savedProfile = await AsyncStorage.getItem("childProfile");
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        setSex(profile.sex || "");
+        setChildName(profile.name || "Child");
+      }
+
       const saved = await AsyncStorage.getItem("childPhrases");
       if (saved) {
         const parsed = JSON.parse(saved);
 
-        // If old format (string array), convert → {text}
         if (Array.isArray(parsed.phrases) && typeof parsed.phrases[0] === "string") {
           const converted = parsed.phrases.map((p: string) => ({ text: p }));
           setPhrases(converted);
@@ -38,16 +51,14 @@ export default function ParentPhrases() {
         }
       }
     };
-    loadData();
+
+    loadAll();
   }, []);
 
-  const speakThePhrase = (text: string) => {
+  const speakThePhrase = (text: string) =>
     Speech.speak(text, { rate: 1.0, pitch: 1.0 });
-  };
 
-  // -----------------------------
-  // PICK IMAGE
-  // -----------------------------
+  // Pick image
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -60,14 +71,10 @@ export default function ParentPhrases() {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setSelectedImage(result.assets[0].uri);
   };
 
-  // -----------------------------
-  // ADD A PHRASE
-  // -----------------------------
+  // Add phrase
   const addPhrase = async () => {
     if (!newPhrase.trim()) return;
 
@@ -85,9 +92,7 @@ export default function ParentPhrases() {
     await AsyncStorage.setItem("childPhrases", JSON.stringify({ phrases: updated }));
   };
 
-  // -----------------------------
-  // REMOVE A PHRASE
-  // -----------------------------
+  // Remove phrase
   const removePhrase = async (cardToDelete: PhraseCard) => {
     const updated = phrases.filter((p) => p.text !== cardToDelete.text);
     setPhrases(updated);
@@ -96,52 +101,73 @@ export default function ParentPhrases() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage Phrases</Text>
-      <Text style={styles.subtitle}>Tap a phrase to hear it aloud</Text>
-
-      {/* Input */}
-      <Input
-        placeholder="Add a new phrase"
-        value={newPhrase}
-        onChangeText={setNewPhrase}
-      />
-
-      {/* Pick image */}
-      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageButtonText}>
-          {selectedImage ? "Change Image" : "Add Image (Optional)"}
+    <ScrollView
+      style={{ backgroundColor: theme.bg }}                 // ★ FIXED HERE
+      contentContainerStyle={styles.container}              // no bg here anymore
+    >
+      {/* HEADER BANNER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>💬</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Phrases for {childName}
         </Text>
-      </TouchableOpacity>
+      </View>
 
-      {selectedImage && (
-        <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-      )}
+      {/* INPUT CARD */}
+      <View style={[styles.card, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.sectionTitle, { color: theme.label }]}>
+          Add New Phrase
+        </Text>
 
-      {/* Add button */}
-      <TouchableOpacity style={styles.addButton} onPress={addPhrase}>
-        <Text style={styles.addText}>Add Phrase</Text>
-      </TouchableOpacity>
+        <Input
+          placeholder="Enter phrase"
+          value={newPhrase}
+          onChangeText={setNewPhrase}
+        />
 
-      {/* List Grid */}
+        <TouchableOpacity
+          style={[styles.imageButton, { backgroundColor: theme.buttonBg }]}
+          onPress={pickImage}
+        >
+          <Text style={styles.imageButtonText}>
+            {selectedImage ? "Change Image" : "Add Image (Optional)"}
+          </Text>
+        </TouchableOpacity>
+
+        {selectedImage && (
+          <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+        )}
+
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: theme.buttonBg }]}
+          onPress={addPhrase}
+        >
+          <Text style={styles.addText}>Add Phrase</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* PHRASE GRID */}
       <View style={styles.grid}>
         {phrases.map((card) => (
-          <View key={card.text} style={styles.tile}>
+          <View key={card.text} style={[styles.tile, { backgroundColor: theme.tileBg }]}>
             <TouchableOpacity
               style={styles.tilePress}
               activeOpacity={0.8}
               onPress={() => speakThePhrase(card.text)}
             >
-              {/* Image if exists */}
               {card.image ? (
                 <Image source={{ uri: card.image }} style={styles.cardImage} />
               ) : (
-                <View style={styles.fallbackImage}>
-                  <Text style={styles.fallbackIcon}>💬</Text>
+                <View style={[styles.fallbackImage, { backgroundColor: theme.bg }]}>
+                  <Text style={[styles.fallbackIcon, { color: theme.label }]}>💬</Text>
                 </View>
               )}
 
-              <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
+              <Text
+                style={[styles.phrase, { color: theme.label }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
                 {card.text}
               </Text>
             </TouchableOpacity>
@@ -156,48 +182,68 @@ export default function ParentPhrases() {
         ))}
       </View>
 
-      {/* Back */}
+      {/* BACK BUTTON */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("../parent-settings")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// ------------------------------------------
-// STYLES
-// ------------------------------------------
+/* ---------------------- STYLES ---------------------- */
+
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 50,
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    minHeight: "100%",                 // ★ Makes theme reach bottom ALWAYS
   },
 
-  title: {
-    fontSize: 32,
+  banner: {
+    width: "100%",
+    padding: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+
+  bannerTitle: {
+    fontSize: 28,
     fontWeight: "900",
-    color: "#4F46E5",
-    marginBottom: 5,
   },
 
-  subtitle: {
-    fontSize: 18,
-    color: "#6B7280",
-    marginBottom: 20,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 15,
+  },
+
+  card: {
+    width: "90%",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 30,
+    elevation: 3,
   },
 
   imageButton: {
-    backgroundColor: "#3B82F6",
     paddingVertical: 10,
     paddingHorizontal: 30,
-    borderRadius: 10,
+    borderRadius: 12,
     marginTop: 10,
+    marginBottom: 10,
   },
+
   imageButtonText: {
     color: "#fff",
     fontSize: 16,
@@ -213,13 +259,12 @@ const styles = StyleSheet.create({
   },
 
   addButton: {
-    backgroundColor: "#22C55E",
     paddingVertical: 12,
-    paddingHorizontal: 40,
     borderRadius: 12,
-    marginBottom: 20,
-    marginTop: 10,
+    marginTop: 5,
+    alignItems: "center",
   },
+
   addText: {
     color: "#fff",
     fontSize: 18,
@@ -235,10 +280,9 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
+    padding: 12,
     marginBottom: 20,
-    padding: 10,
     elevation: 3,
     alignItems: "center",
   },
@@ -250,52 +294,55 @@ const styles = StyleSheet.create({
 
   cardImage: {
     width: "100%",
-    height: 90,
-    borderRadius: 14,
+    height: 100,
+    borderRadius: 12,
     marginBottom: 8,
+    resizeMode: "cover",
   },
+
   fallbackImage: {
     width: "100%",
-    height: 90,
-    borderRadius: 14,
-    backgroundColor: "#E2E8F0",
+    height: 100,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
+
   fallbackIcon: {
-    fontSize: 38,
+    fontSize: 42,
   },
 
   phrase: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
   deleteButton: {
-    marginTop: 10,
+    marginTop: 8,
     backgroundColor: "#EF4444",
     paddingVertical: 6,
     paddingHorizontal: 20,
     borderRadius: 10,
   },
+
   deleteText: {
     color: "#fff",
     fontWeight: "700",
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
+    marginBottom: 20,
   },
+
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

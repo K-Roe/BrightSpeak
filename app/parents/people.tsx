@@ -12,57 +12,60 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Input from "../../components/input";
 
-// Hybrid card type
+import Input from "../../components/input";
+import { getChildTheme } from "../theme/childTheme";
+
+// TYPES
 type PeopleCard = {
   name: string;
-  image?: string; // local image URI
+  image?: string;
   icon?: string;
 };
 
 export default function ParentPeople() {
   const [peoples, setPeoples] = useState<PeopleCard[]>([]);
-  const [newPeople, setNewPeople] = useState<string>("");
+  const [newPeople, setNewPeople] = useState("");
   const [pickedImage, setPickedImage] = useState<string | null>(null);
 
-  // ----------------------------------------
-  // LOAD EXISTING DATA
-  // ----------------------------------------
+  const [sex, setSex] = useState("");
+  const [childName, setChildName] = useState("Child");
+
+  const theme = getChildTheme(sex);
+
+  // LOAD PROFILE + PEOPLE
   useEffect(() => {
-    const loadData = async () => {
+    const loadAll = async () => {
+      const savedProfile = await AsyncStorage.getItem("childProfile");
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        setSex(profile.sex || "");
+        setChildName(profile.name || "Child");
+      }
+
       const saved = await AsyncStorage.getItem("childPeople");
       if (!saved) return;
 
       const parsed = JSON.parse(saved);
 
-      // New format: array of objects
       if (Array.isArray(parsed.peoples) && typeof parsed.peoples[0] === "object") {
         setPeoples(parsed.peoples);
       } else {
-        // OLD format: simple string array
         const converted = (parsed.peoples || []).map((name: string) => ({
           name,
         }));
         setPeoples(converted);
       }
     };
-    loadData();
+    loadAll();
   }, []);
 
-  // ----------------------------------------
   // SPEAK
-  // ----------------------------------------
   const speakPerson = (text: string) => {
-    Speech.speak(text, {
-      rate: 1.0,
-      pitch: 1.0,
-    });
+    Speech.speak(text, { rate: 1.0, pitch: 1.0 });
   };
 
-  // ----------------------------------------
-  // IMAGE PICKER
-  // ----------------------------------------
+  // PICK IMAGE
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -76,14 +79,10 @@ export default function ParentPeople() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
 
-    if (!result.canceled) {
-      setPickedImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setPickedImage(result.assets[0].uri);
   };
 
-  // ----------------------------------------
   // ADD PERSON
-  // ----------------------------------------
   const addPerson = async () => {
     if (!newPeople.trim()) return;
 
@@ -104,12 +103,9 @@ export default function ParentPeople() {
     );
   };
 
-  // ----------------------------------------
-  // DELETE (FIXED)
-  // ----------------------------------------
+  // REMOVE
   const removePerson = async (toDelete: PeopleCard) => {
     const updated = peoples.filter((p) => p.name !== toDelete.name);
-
     setPeoples(updated);
 
     await AsyncStorage.setItem(
@@ -118,41 +114,59 @@ export default function ParentPeople() {
     );
   };
 
-  // ----------------------------------------
-  // UI
-  // ----------------------------------------
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage People</Text>
-      <Text style={styles.subtitle}>Add family, friends, teachers, etc.</Text>
-
-      {/* INPUT */}
-      <Input
-        placeholder="Enter a person (e.g., Mummy, Daddy, Teacher)"
-        value={newPeople}
-        onChangeText={setNewPeople}
-      />
-
-      {/* PICK IMAGE */}
-      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageButtonText}>
-          {pickedImage ? "Change Image" : "Pick Image (Optional)"}
+    <ScrollView
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
+    >
+      {/* HEADER BANNER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>👨‍👩‍👧</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          People for {childName}
         </Text>
-      </TouchableOpacity>
+      </View>
 
-      {pickedImage && (
-        <Image source={{ uri: pickedImage }} style={styles.previewImage} />
-      )}
+      {/* INPUT CARD */}
+      <View style={[styles.card, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.sectionTitle, { color: theme.label }]}>
+          Add a Person
+        </Text>
 
-      {/* ADD BUTTON */}
-      <TouchableOpacity style={styles.addButton} onPress={addPerson}>
-        <Text style={styles.addText}>Add Person</Text>
-      </TouchableOpacity>
+        <Input
+          placeholder="Name (e.g. Mummy, Daddy, Teacher)"
+          value={newPeople}
+          onChangeText={setNewPeople}
+        />
 
-      {/* GRID */}
+        <TouchableOpacity
+          style={[styles.imageButton, { backgroundColor: theme.buttonBg }]}
+          onPress={pickImage}
+        >
+          <Text style={styles.imageButtonText}>
+            {pickedImage ? "Change Image" : "Add Image (Optional)"}
+          </Text>
+        </TouchableOpacity>
+
+        {pickedImage && (
+          <Image source={{ uri: pickedImage }} style={styles.previewImage} />
+        )}
+
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: theme.buttonBg }]}
+          onPress={addPerson}
+        >
+          <Text style={styles.addText}>Add Person</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* PEOPLE GRID */}
       <View style={styles.grid}>
         {peoples.map((person, index) => (
-          <View key={index} style={styles.tile}>
+          <View
+            key={index}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
+          >
             <TouchableOpacity
               style={styles.tilePress}
               activeOpacity={0.8}
@@ -161,12 +175,23 @@ export default function ParentPeople() {
               {person.image ? (
                 <Image source={{ uri: person.image }} style={styles.cardImage} />
               ) : (
-                <View style={styles.fallbackImage}>
-                  <Text style={styles.fallbackIcon}>👤</Text>
+                <View
+                  style={[
+                    styles.fallbackImage,
+                    { backgroundColor: theme.bg },
+                  ]}
+                >
+                  <Text style={[styles.fallbackIcon, { color: theme.label }]}>
+                    👤
+                  </Text>
                 </View>
               )}
 
-              <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
+              <Text
+                style={[styles.phrase, { color: theme.label }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
                 {person.name}
               </Text>
             </TouchableOpacity>
@@ -181,44 +206,64 @@ export default function ParentPeople() {
         ))}
       </View>
 
-      {/* BACK */}
+      {/* BACK BUTTON */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("../parent-settings")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// ----------------------------------------
+// ----------------------------
 // STYLES
-// ----------------------------------------
+// ----------------------------
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
-    paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
+    paddingTop: 30,
+    paddingBottom: 50,
     alignItems: "center",
+    minHeight: "100%",
   },
 
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#4F46E5",
-    marginBottom: 5,
+  banner: {
+    width: "100%",
+    padding: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
   },
-  subtitle: {
-    fontSize: 18,
-    color: "#6B7280",
-    marginBottom: 20,
+
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+
+  bannerTitle: {
+    fontSize: 28,
+    fontWeight: "900",
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 15,
+  },
+
+  card: {
+    width: "90%",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 30,
+    elevation: 3,
   },
 
   imageButton: {
-    backgroundColor: "#60A5FA",
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
     borderRadius: 12,
     marginTop: 10,
     marginBottom: 10,
@@ -228,19 +273,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+
   previewImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
 
   addButton: {
-    backgroundColor: "#22C55E",
     paddingVertical: 12,
-    paddingHorizontal: 40,
     borderRadius: 12,
-    marginBottom: 20,
+    marginTop: 5,
+    alignItems: "center",
   },
   addText: {
     color: "#fff",
@@ -257,11 +303,10 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
+    padding: 12,
     marginBottom: 20,
     elevation: 3,
-    padding: 10,
     alignItems: "center",
   },
 
@@ -273,7 +318,7 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 100,
-    resizeMode: "contain",
+    resizeMode: "cover",
     borderRadius: 12,
     marginBottom: 8,
   },
@@ -281,20 +326,19 @@ const styles = StyleSheet.create({
   fallbackImage: {
     width: "100%",
     height: 100,
-    backgroundColor: "#E2E8F0",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
+
   fallbackIcon: {
-    fontSize: 40,
+    fontSize: 42,
   },
 
   phrase: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
@@ -311,7 +355,6 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
@@ -321,6 +364,6 @@ const styles = StyleSheet.create({
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

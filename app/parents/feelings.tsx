@@ -10,56 +10,60 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+
 import Input from "../../components/input";
+import { getChildTheme } from "../theme/childTheme";
 
 type FeelingCard = {
   name: string;
-  image?: string; // local uri
+  image?: string; 
   icon?: string;
 };
 
 export default function ParentFeelings() {
   const [feelings, setFeelings] = useState<FeelingCard[]>([]);
-  const [newFeeling, setNewFeeling] = useState<string>("");
+  const [newFeeling, setNewFeeling] = useState("");
   const [pickedImage, setPickedImage] = useState<string | null>(null);
+  const [sex, setSex] = useState("");
+  const [childName, setChildName] = useState("Child");
 
-  // -----------------------------
-  // LOAD EXISTING FEELINGS
-  // -----------------------------
+  const theme = getChildTheme(sex);
+
+  // LOAD DATA + PROFILE
   useEffect(() => {
     const loadData = async () => {
+      const savedProfile = await AsyncStorage.getItem("childProfile");
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        setSex(profile.sex || "");
+        setChildName(profile.name || "Child");
+      }
+
       const saved = await AsyncStorage.getItem("childFeelings");
       if (!saved) return;
 
       const parsed = JSON.parse(saved);
 
-      // If already new hybrid format
       if (Array.isArray(parsed.feelings) && typeof parsed.feelings[0] === "object") {
         setFeelings(parsed.feelings);
       } else {
-        // Convert legacy strings → card objects
         const converted = (parsed.feelings || []).map((name: string) => ({
           name,
         }));
         setFeelings(converted);
       }
     };
-
     loadData();
   }, []);
 
-  // -----------------------------
-  // SPEAK CARD
-  // -----------------------------
+  // SPEAK FEELING
   const speakFeeling = (text: string) => {
     Speech.speak(text, { rate: 1.0, pitch: 1.0 });
   };
 
-  // -----------------------------
   // PICK IMAGE
-  // -----------------------------
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -68,9 +72,9 @@ export default function ParentFeelings() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.9,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
 
     if (!result.canceled) {
@@ -78,18 +82,13 @@ export default function ParentFeelings() {
     }
   };
 
-  // -----------------------------
   // ADD FEELING
-  // -----------------------------
   const addFeeling = async () => {
-    if (!newFeeling.trim()) {
-      alert("Please enter a feeling.");
-      return;
-    }
+    if (!newFeeling.trim()) return;
 
     const lower = newFeeling.trim().toLowerCase();
     if (lower.includes(" ")) {
-      alert("One-word only. E.g. Happy, Sad, Angry.");
+      alert("One word only. (e.g. Happy, Sad)");
       return;
     }
 
@@ -107,49 +106,67 @@ export default function ParentFeelings() {
     await AsyncStorage.setItem("childFeelings", JSON.stringify({ feelings: updated }));
   };
 
-  // -----------------------------
-  // DELETE FEELING
-  // -----------------------------
-  const removeFeeling = async (toDelete: FeelingCard) => {
-    const updated = feelings.filter((f) => f !== toDelete);
-
+  // REMOVE FEELING
+  const removeFeeling = async (card: FeelingCard) => {
+    const updated = feelings.filter((f) => f !== card);
     setFeelings(updated);
     await AsyncStorage.setItem("childFeelings", JSON.stringify({ feelings: updated }));
   };
 
-  // -----------------------------
   // RENDER
-  // -----------------------------
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage Feelings</Text>
-      <Text style={styles.subtitle}>Create “I feel ...” cards</Text>
-
-      {/* Add New Feeling */}
-      <Input
-        placeholder="Feeling (one word)"
-        value={newFeeling}
-        onChangeText={setNewFeeling}
-      />
-
-      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageButtonText}>
-          {pickedImage ? "Change Image" : "Pick an Image (Optional)"}
+    <ScrollView
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
+    >
+      {/* HEADER BANNER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>😊</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Feelings for {childName}
         </Text>
-      </TouchableOpacity>
+      </View>
 
-      {pickedImage && (
-        <Image source={{ uri: pickedImage }} style={styles.previewImage} />
-      )}
+      {/* INPUT CARD */}
+      <View style={[styles.card, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.sectionTitle, { color: theme.label }]}>
+          Add a New Feeling
+        </Text>
 
-      <TouchableOpacity style={styles.addButton} onPress={addFeeling}>
-        <Text style={styles.addText}>Add Feeling</Text>
-      </TouchableOpacity>
+        <Input
+          placeholder="One word (e.g. Happy)"
+          value={newFeeling}
+          onChangeText={setNewFeeling}
+        />
 
-      {/* Existing Cards */}
+        <TouchableOpacity
+          style={[styles.imageButton, { backgroundColor: theme.buttonBg }]}
+          onPress={pickImage}
+        >
+          <Text style={styles.imageButtonText}>
+            {pickedImage ? "Change Image" : "Add Image (Optional)"}
+          </Text>
+        </TouchableOpacity>
+
+        {pickedImage && (
+          <Image source={{ uri: pickedImage }} style={styles.previewImage} />
+        )}
+
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: theme.buttonBg }]}
+          onPress={addFeeling}
+        >
+          <Text style={styles.addText}>Add Feeling</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* FEELINGS GRID */}
       <View style={styles.grid}>
         {feelings.map((f, index) => (
-          <View key={index} style={styles.tile}>
+          <View
+            key={index}
+            style={[styles.tile, { backgroundColor: theme.tileBg }]}
+          >
             <TouchableOpacity
               style={styles.tilePress}
               activeOpacity={0.8}
@@ -158,12 +175,23 @@ export default function ParentFeelings() {
               {f.image ? (
                 <Image source={{ uri: f.image }} style={styles.cardImage} />
               ) : (
-                <View style={styles.fallbackImage}>
-                  <Text style={styles.fallbackIcon}>😊</Text>
+                <View
+                  style={[
+                    styles.fallbackImage,
+                    { backgroundColor: theme.bg },
+                  ]}
+                >
+                  <Text style={[styles.fallbackIcon, { color: theme.label }]}>
+                    😊
+                  </Text>
                 </View>
               )}
 
-              <Text style={styles.phrase} numberOfLines={2} adjustsFontSizeToFit>
+              <Text
+                style={[styles.phrase, { color: theme.label }]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
                 {f.name}
               </Text>
             </TouchableOpacity>
@@ -178,62 +206,88 @@ export default function ParentFeelings() {
         ))}
       </View>
 
+      {/* BACK BUTTON */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("../parent-settings")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
+// -----------------------------
+// STYLES
+// -----------------------------
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
-    paddingBottom: 30,
-    backgroundColor: "#F5F5F5",
+    paddingTop: 30,
+    paddingBottom: 50,
     alignItems: "center",
+    minHeight: "100%",
   },
 
-  title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#4F46E5",
-    marginBottom: 5,
+  banner: {
+    width: "100%",
+    padding: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
   },
-  subtitle: {
-    fontSize: 18,
-    color: "#6B7280",
-    marginBottom: 20,
+
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+
+  bannerTitle: {
+    fontSize: 28,
+    fontWeight: "900",
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 15,
+  },
+
+  card: {
+    width: "90%",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 30,
+    elevation: 3,
   },
 
   imageButton: {
-    backgroundColor: "#60A5FA",
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
     borderRadius: 12,
     marginTop: 10,
     marginBottom: 10,
   },
+
   imageButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
   },
+
   previewImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
 
   addButton: {
-    backgroundColor: "#22C55E",
     paddingVertical: 12,
-    paddingHorizontal: 40,
     borderRadius: 12,
-    marginBottom: 20,
+    marginTop: 5,
+    alignItems: "center",
   },
   addText: {
     color: "#fff",
@@ -250,13 +304,13 @@ const styles = StyleSheet.create({
 
   tile: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
     borderRadius: 20,
+    padding: 12,
     marginBottom: 20,
     elevation: 3,
-    padding: 10,
     alignItems: "center",
   },
+
   tilePress: {
     width: "100%",
     alignItems: "center",
@@ -265,28 +319,27 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: 100,
-    resizeMode: "contain",
     borderRadius: 12,
+    resizeMode: "cover",
     marginBottom: 8,
   },
 
   fallbackImage: {
     width: "100%",
     height: 100,
-    backgroundColor: "#E2E8F0",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
+
   fallbackIcon: {
-    fontSize: 40,
+    fontSize: 42,
   },
 
   phrase: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#4F46E5",
     textAlign: "center",
   },
 
@@ -303,16 +356,16 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
     marginBottom: 20,
   },
+
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
