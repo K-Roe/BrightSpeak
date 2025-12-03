@@ -15,7 +15,6 @@ import {
 // ⭐ Theme import
 import { getChildTheme } from "../theme/childTheme";
 
-// Hybrid card type
 type FeelingItem = {
   name: string;
   image?: string;
@@ -29,7 +28,6 @@ export default function Feelings() {
 
   useEffect(() => {
     const loadAll = async () => {
-      // Load child profile
       const savedName = await AsyncStorage.getItem("childProfile");
       if (savedName) {
         const profile = JSON.parse(savedName);
@@ -37,7 +35,6 @@ export default function Feelings() {
         setSex(profile.sex || "");
       }
 
-      // Load saved feelings
       const savedFeelingData = await AsyncStorage.getItem("childFeelings");
 
       if (!savedFeelingData) {
@@ -47,19 +44,17 @@ export default function Feelings() {
 
       const parsed = JSON.parse(savedFeelingData);
 
-      // If no array or empty → defaults
       if (!Array.isArray(parsed.feelings) || parsed.feelings.length === 0) {
         loadDefaults();
         return;
       }
 
-      // New format → objects
       if (typeof parsed.feelings[0] === "object") {
         setFeelings(parsed.feelings);
         return;
       }
 
-      // Old format → convert strings
+      // legacy list → convert
       const converted = parsed.feelings.map((f: string) => ({ name: f }));
       setFeelings(converted);
     };
@@ -67,14 +62,13 @@ export default function Feelings() {
     loadAll();
   }, []);
 
-  // THEME
   const theme = getChildTheme(sex);
 
   // ----------------------------------
   // DEFAULT FEELINGS
   // ----------------------------------
   function loadDefaults() {
-    const defaults: FeelingItem[] = [
+    setFeelings([
       { name: "I Feel Happy", icon: "emoticon-happy" },
       { name: "I Feel Sad", icon: "emoticon-sad" },
       { name: "I Feel Angry", icon: "emoticon-angry" },
@@ -87,31 +81,30 @@ export default function Feelings() {
       { name: "I Feel Silly", icon: "emoticon-wink" },
       { name: "I Feel Hungry", icon: "food" },
       { name: "I Feel Thirsty", icon: "cup-water" },
-    ];
-
-    setFeelings(defaults);
+    ]);
   }
 
-  // Speak feeling on tap
-  const speakTheFeeling = (word: string) => {
-    Speech.speak(word, {
-      rate: 1.0,
-      pitch: 1.0,
-    });
+  const speakTheFeeling = (text: string) => {
+    Speech.speak(text, { rate: 1.0, pitch: 1.0 });
   };
 
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg },
-      ]}
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
     >
-      <Text style={[styles.title, { color: theme.title }]}>Feelings</Text>
-      <Text style={[styles.subtitle, { color: theme.label }]}>
-        Tap a feeling, {childName}
-      </Text>
+      {/* ⭐ BANNER HEADER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>😊</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Feelings
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a feeling, {childName}
+        </Text>
+      </View>
 
+      {/* ⭐ FEELING GRID */}
       <View style={styles.grid}>
         {feelings.map((f: FeelingItem, index) => (
           <TouchableOpacity
@@ -137,7 +130,9 @@ export default function Feelings() {
 
             {/* Fallback */}
             {!f.image && !f.icon && (
-              <View style={[styles.fallbackIcon, { backgroundColor: theme.tileBg }]}>
+              <View
+                style={[styles.fallbackIcon, { backgroundColor: theme.tileBg }]}
+              >
                 <MaterialCommunityIcons
                   name="emoticon-outline"
                   size={50}
@@ -146,18 +141,22 @@ export default function Feelings() {
               </View>
             )}
 
-            <Text style={[styles.feel, { color: theme.label }]} numberOfLines={2}>
+            <Text
+              style={[styles.feel, { color: theme.label }]}
+              numberOfLines={2}
+            >
               {f.name}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* ⭐ BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -165,22 +164,36 @@ export default function Feelings() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 40,
     alignItems: "center",
+    minHeight: "100%",
   },
 
-  title: {
-    fontSize: 32,
+  // ⭐ BANNER
+  banner: {
+    width: "90%",
+    paddingVertical: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 30,
     fontWeight: "900",
-    marginBottom: 5,
   },
-
-  subtitle: {
+  bannerSubtitle: {
     fontSize: 18,
-    marginBottom: 20,
+    marginTop: 5,
+    fontWeight: "600",
   },
 
+  // ⭐ GRID
   grid: {
     width: "90%",
     flexDirection: "row",
@@ -225,12 +238,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
-    marginBottom: 20,
   },
 
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

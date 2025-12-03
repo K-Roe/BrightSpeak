@@ -91,23 +91,27 @@ export default function People() {
 
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg },
-      ]}
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
     >
-      <Text style={[styles.title, { color: theme.title }]}>People</Text>
+      {/* ⭐ BANNER HEADER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>👨‍👩‍👧</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          People
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a person, {childName}
+        </Text>
+      </View>
 
-      <Text style={[styles.subtitle, { color: theme.label }]}>
-        Tap a person, {childName}
-      </Text>
-
+      {/* GRID */}
       <View style={styles.grid}>
         {peoples.map((person, index) => (
           <TouchableOpacity
             key={index}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => speakThePhrase(person.name)}
           >
             {/* IMAGE or FALLBACK ICON */}
@@ -137,11 +141,12 @@ export default function People() {
         ))}
       </View>
 
+      {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -152,62 +157,76 @@ export default function People() {
 // ----------------------------------------
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 40,
     alignItems: "center",
+    minHeight: "100%", // ⭐ ensures background fills screen
   },
 
-  title: {
-    fontSize: 32,
+  // 🌟 BANNER HEADER
+  banner: {
+    width: "90%",
+    paddingVertical: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 30,
     fontWeight: "900",
-    marginBottom: 5,
   },
-
-  subtitle: {
+  bannerSubtitle: {
     fontSize: 18,
-    marginBottom: 20,
+    marginTop: 5,
+    fontWeight: "600",
   },
 
+  // GRID
   grid: {
     width: "90%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: 20,
   },
 
   tile: {
     width: "45%",
-    borderRadius: 18,
+    borderRadius: 20,
     marginBottom: 20,
-    padding: 10,
+    padding: 12,
     alignItems: "center",
     elevation: 3,
   },
 
   cardImage: {
     width: "100%",
-    height: 90,
+    height: 100,
     borderRadius: 14,
     resizeMode: "cover",
-    marginBottom: 6,
+    marginBottom: 10,
   },
 
   fallbackImage: {
     width: "100%",
-    height: 90,
+    height: 100,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 10,
   },
 
   fallbackIcon: {
-    fontSize: 40,
+    fontSize: 42,
   },
 
   people: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
     textAlign: "center",
   },
@@ -216,11 +235,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
+    marginTop: 20,
+    marginBottom: 20,
   },
 
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

@@ -32,31 +32,31 @@ export default function Letters() {
     });
   };
 
-  const letters = [
-    "A","B","C","D","E","F","G","H","I","J",
-    "K","L","M","N","O","P","Q","R","S","T",
-    "U","V","W","X","Y","Z"
-  ];
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg }
-      ]}
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
     >
-      <Text style={[styles.title, { color: theme.title }]}>Letters</Text>
+      {/* HEADER / BANNER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>🔤</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Letters
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a letter, {childName}
+        </Text>
+      </View>
 
-      <Text style={[styles.subtitle, { color: theme.label }]}>
-        Tap a letter, {childName}
-      </Text>
-
+      {/* GRID */}
       <View style={styles.grid}>
         {letters.map((lett) => (
           <TouchableOpacity
             key={lett}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             onPress={() => speakLetter(lett)}
           >
             <Text style={[styles.letter, { color: theme.label }]}>
@@ -66,6 +66,7 @@ export default function Letters() {
         ))}
       </View>
 
+      {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
@@ -78,27 +79,46 @@ export default function Letters() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 40,
     alignItems: "center",
+    minHeight: "100%",
   },
-  title: {
-    fontSize: 32,
+
+  /* HEADER */
+  banner: {
+    width: "90%",
+    paddingVertical: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 30,
     fontWeight: "900",
-    marginBottom: 5,
   },
-  subtitle: {
+  bannerSubtitle: {
     fontSize: 18,
-    marginBottom: 20,
+    marginTop: 5,
+    fontWeight: "600",
   },
+
+  /* GRID */
   grid: {
     width: "90%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    marginTop: 10,
   },
+
   tile: {
-    width: "30%",
+    width: "28%",
     aspectRatio: 1,
     borderRadius: 20,
     marginBottom: 20,
@@ -106,20 +126,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 3,
   },
+
   letter: {
-    fontSize: 40,
-    fontWeight: "800",
+    fontSize: 42,
+    fontWeight: "900",
   },
+
   backButton: {
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 25,
   },
+
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

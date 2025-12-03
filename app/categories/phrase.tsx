@@ -27,7 +27,7 @@ export default function Phrases() {
 
   useEffect(() => {
     const loadEverything = async () => {
-      // Load child name & sex
+      // Load child profile
       const savedName = await AsyncStorage.getItem("childProfile");
       if (savedName) {
         const profile = JSON.parse(savedName);
@@ -40,13 +40,13 @@ export default function Phrases() {
       if (saved) {
         const parsed = JSON.parse(saved);
 
-        // New format
+        // New object format
         if (Array.isArray(parsed.phrases) && typeof parsed.phrases[0] === "object") {
           setPhrases(parsed.phrases);
           return;
         }
 
-        // Old string-only format
+        // Old string-only format → convert
         if (Array.isArray(parsed.phrases) && typeof parsed.phrases[0] === "string") {
           const converted = parsed.phrases.map((p: string) => ({ text: p }));
           setPhrases(converted);
@@ -84,17 +84,21 @@ export default function Phrases() {
 
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg },
-      ]}
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
     >
-      <Text style={[styles.title, { color: theme.title }]}>Phrases</Text>
+      {/* ⭐ BANNER HEADER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>💬</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Phrases
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a phrase, {childName}
+        </Text>
+      </View>
 
-      <Text style={[styles.subtitle, { color: theme.label }]}>
-        Tap a phrase, {childName}
-      </Text>
-
+      {/* GRID OF PHRASES */}
       <View style={styles.grid}>
         {phrases.map((card, index) => (
           <TouchableOpacity
@@ -107,10 +111,7 @@ export default function Phrases() {
               <Image source={{ uri: card.image }} style={styles.cardImage} />
             ) : (
               <View
-                style={[
-                  styles.fallback,
-                  { backgroundColor: theme.tileBg },
-                ]}
+                style={[styles.fallback, { backgroundColor: theme.tileBg }]}
               >
                 <Text style={[styles.fallbackIcon, { color: theme.label }]}>
                   💬
@@ -118,18 +119,23 @@ export default function Phrases() {
               </View>
             )}
 
-            <Text style={[styles.phrase, { color: theme.label }]} numberOfLines={2} adjustsFontSizeToFit>
+            <Text
+              style={[styles.phrase, { color: theme.label }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+            >
               {card.text}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -140,57 +146,71 @@ export default function Phrases() {
 // ----------------------------------------
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 40,
     alignItems: "center",
+    minHeight: "100%",
   },
 
-  title: {
-    fontSize: 32,
+  // ⭐ BANNER
+  banner: {
+    width: "90%",
+    paddingVertical: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 30,
     fontWeight: "900",
   },
-
-  subtitle: {
+  bannerSubtitle: {
     fontSize: 18,
-    marginBottom: 20,
+    marginTop: 5,
+    fontWeight: "600",
   },
 
+  // ⭐ GRID
   grid: {
     width: "90%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 30,
   },
 
   tile: {
     width: "45%",
-    borderRadius: 18,
+    borderRadius: 20,
     marginBottom: 20,
-    padding: 10,
+    padding: 12,
     alignItems: "center",
     elevation: 3,
   },
 
   cardImage: {
     width: "100%",
-    height: 90,
+    height: 100,
     borderRadius: 12,
-    resizeMode: "contain",
-    marginBottom: 8,
+    resizeMode: "cover",
+    marginBottom: 10,
   },
 
   fallback: {
     width: "100%",
-    height: 90,
+    height: 100,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
 
   fallbackIcon: {
-    fontSize: 40,
+    fontSize: 42,
   },
 
   phrase: {
@@ -203,11 +223,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
+    marginTop: 20,
   },
 
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

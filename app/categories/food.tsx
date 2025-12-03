@@ -3,12 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 // ❤️ THEME
 import { getChildTheme } from "../theme/childTheme";
 
-// Type for the new hybrid card system
+// Type for the hybrid card system
 type FoodItem = {
   name: string;
   image?: string;
@@ -91,25 +98,27 @@ export default function Food() {
   //---------------------------------------------------
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg },
-      ]}
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={styles.container}
     >
-      <Text style={[styles.title, { color: theme.title }]}>
-        Food & Drink
-      </Text>
+      {/* BANNER HEADER */}
+      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>🍽️</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Food & Drink
+        </Text>
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a card, {childName}
+        </Text>
+      </View>
 
-      <Text style={[styles.subtitle, { color: theme.label }]}>
-        Tap a card, {childName}
-      </Text>
-
+      {/* GRID */}
       <View style={styles.grid}>
         {foods.map((item: FoodItem, index) => (
           <TouchableOpacity
             key={index}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             onPress={() => speakTheFood(item.name)}
           >
             {/* IMAGE FIRST */}
@@ -127,9 +136,14 @@ export default function Food() {
               />
             )}
 
-            {/* FALLBACK BOX */}
+            {/* FALLBACK ICON */}
             {!item.image && !item.icon && (
-              <View style={[styles.fallbackIcon, { backgroundColor: theme.tileBg }]}>
+              <View
+                style={[
+                  styles.fallbackIcon,
+                  { backgroundColor: theme.tileBg },
+                ]}
+              >
                 <MaterialCommunityIcons
                   name="food"
                   size={50}
@@ -145,11 +159,12 @@ export default function Food() {
         ))}
       </View>
 
+      {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
         onPress={() => router.push("/child-categories")}
       >
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -160,22 +175,36 @@ export default function Food() {
 //---------------------------------------------------
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 40,
     alignItems: "center",
+    minHeight: "100%",
   },
 
-  title: {
-    fontSize: 32,
+  // Banner
+  banner: {
+    width: "90%",
+    paddingVertical: 25,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 25,
+    elevation: 3,
+  },
+  bannerIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  bannerTitle: {
+    fontSize: 30,
     fontWeight: "900",
-    marginBottom: 5,
   },
-
-  subtitle: {
+  bannerSubtitle: {
     fontSize: 18,
-    marginBottom: 20,
+    marginTop: 5,
+    fontWeight: "600",
   },
 
+  // Grid
   grid: {
     width: "90%",
     flexDirection: "row",
@@ -187,16 +216,16 @@ const styles = StyleSheet.create({
     width: "48%",
     borderRadius: 20,
     marginBottom: 20,
-    padding: 12,
+    padding: 14,
     alignItems: "center",
     elevation: 3,
   },
 
   image: {
     width: "90%",
-    height: 90,
+    height: 100,
     resizeMode: "contain",
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 10,
   },
 
@@ -219,13 +248,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 30,
+    marginBottom: 25,
   },
 
   backText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
