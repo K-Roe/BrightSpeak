@@ -16,6 +16,7 @@ import { getChildTheme } from "../theme/childTheme";
 export default function Letters() {
   const [childName, setChildName] = useState("Child");
   const [themeColor, setThemeColor] = useState("neutral");
+  const [question, setQuestion] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -26,8 +27,28 @@ export default function Letters() {
         setThemeColor(profile.themeColor || "neutral");
       }
     };
+
+   
+    nextQuestion();
     loadData();
   }, []);
+  
+ const nextQuestion = (answer: string | null = null) => {
+
+      if(answer) {
+        if(answer === question) {
+          speakLetter(`Well done! You guessed the letter ${answer} correctly!`);
+        } else {
+          speakLetter(`Oops! The correct letter was ${question}. Let's try again!`);
+          return;
+        }
+      }
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      const randomLetter =
+        letters[Math.floor(Math.random() * letters.length)];
+      setQuestion(randomLetter);
+    speakLetter(`Can you guess the letter ${randomLetter}`);
+    }
 
   const theme = getChildTheme(themeColor);
 
@@ -51,10 +72,19 @@ export default function Letters() {
       {/* HEADER */}
       <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
         <Text style={[styles.bannerIcon, { color: theme.title }]}>🔤</Text>
-        <Text style={[styles.bannerTitle, { color: theme.title }]}>Letters</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>Guess The Letter</Text>
 
         <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
-          Tap a letter, {childName}
+          Tap a letter to answer, {childName}
+        </Text>
+      </View>
+
+      {/* Question */}
+       <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>{question}</Text>
+
+        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+          Tap a letter to answer, {childName}
         </Text>
       </View>
 
@@ -65,7 +95,7 @@ export default function Letters() {
             key={lett}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.9}
-            onPress={() => speakLetter(lett)}
+            onPress={() => nextQuestion(lett)}
           >
             <Text style={[styles.letter, { color: theme.label }]}>{lett}</Text>
           </TouchableOpacity>
@@ -75,7 +105,7 @@ export default function Letters() {
       {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/child-categories")}
+        onPress={() => router.push("/categories/miniGames")}
       >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>

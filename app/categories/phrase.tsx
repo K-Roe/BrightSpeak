@@ -22,7 +22,7 @@ type PhraseCard = {
 
 export default function Phrases() {
   const [childName, setChildName] = useState("Child");
-  const [sex, setSex] = useState("");
+  const [themeColor, setThemeColor] = useState("neutral");
   const [phrases, setPhrases] = useState<PhraseCard[]>([]);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function Phrases() {
       if (savedName) {
         const profile = JSON.parse(savedName);
         setChildName(profile.name);
-        setSex(profile.sex || "");
+        setThemeColor(profile.themeColor || "neutral");
       }
 
       // Load saved phrases
@@ -80,7 +80,7 @@ export default function Phrases() {
   };
 
   // 🌈 THEME
-  const theme = getChildTheme(sex);
+const theme = getChildTheme(themeColor);
 
   return (
     <ScrollView

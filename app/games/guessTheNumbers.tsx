@@ -2,23 +2,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
 import { useEffect, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // ⭐ THEME SUPPORT
 import { getChildTheme } from "../theme/childTheme";
 
-export default function Letters() {
+export default function Numbers() {
   const [childName, setChildName] = useState("Child");
   const [themeColor, setThemeColor] = useState("neutral");
+  const [question, setQuestion] = useState("");
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadName = async () => {
       const saved = await AsyncStorage.getItem("childProfile");
       if (saved) {
         const profile = JSON.parse(saved);
@@ -26,48 +21,74 @@ export default function Letters() {
         setThemeColor(profile.themeColor || "neutral");
       }
     };
-    loadData();
+    nextQuestion();
+    loadName();
   }, []);
 
-  const theme = getChildTheme(themeColor);
+const theme = getChildTheme(themeColor);
 
-  const speakLetter = (lett: string) => {
-    Speech.speak(lett, {
-      rate: 1.0,
-      pitch: 1.0,
-    });
-  };
+ const nextQuestion = (answer: string | null = null) => {
 
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      if(answer) {
+        if(answer === question) {
+          speakNumber(`Well done! You guessed the number ${answer} correctly!`);
+        } else {
+          speakNumber(`Oops! The correct number was ${question}. Let's try again!`);
+          return;
+        }
+      }
+    const numbers = Array.from({ length: 20 }, (_, i) => String(i + 1));
+      const randomLetter =
+        numbers[Math.floor(Math.random() * numbers.length)];
+      setQuestion(randomLetter);
+      speakNumber(`Can you guess the number ${randomLetter}`);
+    }
+
+
+ const speakNumber = (lett: string) => {
+     Speech.speak(lett, {
+       rate: 1.0,
+       pitch: 1.0,
+     });
+   };
+
+    const numbers = Array.from({ length: 20 }, (_, i) => String(i + 1));
 
   return (
     <ScrollView
       style={{ backgroundColor: theme.bg }}
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg } // ⭐ FIXED: ensures theme color applies
-      ]}
+      contentContainerStyle={styles.container}
     >
       {/* HEADER */}
       <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
-        <Text style={[styles.bannerIcon, { color: theme.title }]}>🔤</Text>
-        <Text style={[styles.bannerTitle, { color: theme.title }]}>Letters</Text>
-
+        <Text style={[styles.bannerIcon, { color: theme.title }]}>🔢</Text>
+        <Text style={[styles.bannerTitle, { color: theme.title }]}>
+          Numbers
+        </Text>
         <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
-          Tap a letter, {childName}
+          Tap a number, {childName}
         </Text>
       </View>
 
+        {/* Question */}
+             <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
+              <Text style={[styles.bannerTitle, { color: theme.title }]}>{question}</Text>
+      
+              <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
+                Tap a number to answer, {childName}
+              </Text>
+            </View>
+
       {/* GRID */}
       <View style={styles.grid}>
-        {letters.map((lett) => (
+        {numbers.map((num) => (
           <TouchableOpacity
-            key={lett}
+            key={num}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.9}
-            onPress={() => speakLetter(lett)}
+            onPress={() => nextQuestion(num)}
           >
-            <Text style={[styles.letter, { color: theme.label }]}>{lett}</Text>
+            <Text style={[styles.number, { color: theme.label }]}>{num}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -75,7 +96,7 @@ export default function Letters() {
       {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/child-categories")}
+        onPress={() => router.push("/categories/miniGames")}
       >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
@@ -100,17 +121,14 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     elevation: 3,
   },
-
   bannerIcon: {
     fontSize: 60,
     marginBottom: 10,
   },
-
   bannerTitle: {
     fontSize: 30,
     fontWeight: "900",
   },
-
   bannerSubtitle: {
     fontSize: 18,
     marginTop: 5,
@@ -127,16 +145,16 @@ const styles = StyleSheet.create({
   },
 
   tile: {
-    width: "28%",
+    width: "30%",
     aspectRatio: 1,
     borderRadius: 20,
     marginBottom: 20,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 3,
+    elevation: 2,
   },
 
-  letter: {
+  number: {
     fontSize: 42,
     fontWeight: "900",
   },

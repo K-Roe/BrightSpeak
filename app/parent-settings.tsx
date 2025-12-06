@@ -28,16 +28,19 @@ export default function ParentSettings() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [sex, setSex] = useState("");
+  const [themeColor, setThemeColor] = useState("neutral");
   const [birthday, setBirthday] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const theme = getChildTheme(sex);
+
+  // ➜ theme now based on themeColor instead of sex
+  const theme = getChildTheme(themeColor);
 
   // ⭐ ALERT HOOK
   const { alertVisible, alertTitle, alertMsg, showAlert, hideAlert } =
     useThemedAlert();
 
+  /* ---------------- LOAD PROFILE ---------------- */
   useEffect(() => {
     const loadData = async () => {
       const saved = await AsyncStorage.getItem("childProfile");
@@ -47,6 +50,7 @@ export default function ParentSettings() {
         setName(profile.name || "");
         setAge(profile.age || "");
         setSex(profile.sex || "");
+        setThemeColor(profile.themeColor || "neutral");
         setBirthday(profile.birthday ? new Date(profile.birthday) : null);
       }
     };
@@ -54,7 +58,7 @@ export default function ParentSettings() {
     loadData();
   }, []);
 
-  // animate theme changes
+  /* ---------------- FADE ON THEME CHANGE ---------------- */
   useEffect(() => {
     fadeAnim.setValue(0);
     Animated.timing(fadeAnim, {
@@ -62,8 +66,9 @@ export default function ParentSettings() {
       duration: 350,
       useNativeDriver: true,
     }).start();
-  }, [sex]);
+  }, [themeColor]);
 
+  /* ---------------- SAVE PROFILE ---------------- */
   const saveProfile = async () => {
     let birthdayDay = null;
     let birthdayMonth = null;
@@ -71,7 +76,7 @@ export default function ParentSettings() {
 
     if (birthday) {
       birthdayDay = birthday.getDate();
-      birthdayMonth = birthday.getMonth() + 1; // 0-based → 1-based
+      birthdayMonth = birthday.getMonth() + 1;
       birthdayYear = birthday.getFullYear();
     }
 
@@ -79,6 +84,7 @@ export default function ParentSettings() {
       name,
       age,
       sex,
+      themeColor,
       birthday: birthday ? birthday.toISOString() : null,
       birthdayDay,
       birthdayMonth,
@@ -87,7 +93,6 @@ export default function ParentSettings() {
 
     await AsyncStorage.setItem("childProfile", JSON.stringify(profile));
 
-    // ⭐ REPLACE ALERT()
     showAlert("Saved!", "Your child’s profile has been successfully updated.");
   };
 
@@ -102,11 +107,7 @@ export default function ParentSettings() {
         {/* THEME BANNER */}
         <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
           <Text style={[styles.bannerIcon, { color: theme.title }]}>
-            {sex === "Boy"
-              ? "👦"
-              : sex === "Girl"
-              ? "👧"
-              : "🧒"}
+            {sex === "Boy" ? "👦" : sex === "Girl" ? "👧" : "🧒"}
           </Text>
 
           <Text style={[styles.bannerTitle, { color: theme.title }]}>
@@ -142,84 +143,85 @@ export default function ParentSettings() {
             />
           </View>
 
-{/* BIRTHDAY */}
-<View style={styles.fieldContainer}>
-  <Text style={[styles.label, { color: theme.label }]}>Birthday</Text>
+          {/* BIRTHDAY */}
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, { color: theme.label }]}>Birthday</Text>
 
-  <View style={styles.birthdayRow}>
-    {/* DAY */}
-    <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
-      <Picker
-        selectedValue={birthday ? birthday.getDate() : ""}
-        onValueChange={(d) => {
-          if (!birthday) {
-            setBirthday(new Date(2000, 0, d)); // fallback
-            return;
-          }
-          const newDate = new Date(birthday);
-          newDate.setDate(d);
-          setBirthday(newDate);
-        }}
-        style={[styles.picker, { color: theme.label }]}
-        dropdownIconColor={theme.title}
-      >
-        <Picker.Item label="Day" value="" color="#6B7280" />
-        {Array.from({ length: 31 }, (_, i) => (
-          <Picker.Item key={i} label={`${i + 1}`} value={i + 1} />
-        ))}
-      </Picker>
-    </View>
+            <View style={styles.birthdayRow}>
+              {/* DAY */}
+              <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
+                <Picker
+                  selectedValue={birthday ? birthday.getDate() : ""}
+                  onValueChange={(d) => {
+                    if (!birthday) {
+                      setBirthday(new Date(2000, 0, d));
+                      return;
+                    }
+                    const newDate = new Date(birthday);
+                    newDate.setDate(d);
+                    setBirthday(newDate);
+                  }}
+                  style={[styles.picker, { color: theme.label }]}
+                  dropdownIconColor={theme.title}
+                >
+                  <Picker.Item label="Day" value="" color="#6B7280" />
+                  {Array.from({ length: 31 }, (_, i) => (
+                    <Picker.Item key={i} label={`${i + 1}`} value={i + 1} />
+                  ))}
+                </Picker>
+              </View>
 
-    {/* MONTH */}
-    <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
-      <Picker
-        selectedValue={birthday ? birthday.getMonth() + 1 : ""}
-        onValueChange={(m) => {
-          if (!birthday) {
-            setBirthday(new Date(2000, m - 1, 1));
-            return;
-          }
-          const newDate = new Date(birthday);
-          newDate.setMonth(m - 1);
-          setBirthday(newDate);
-        }}
-        style={[styles.picker, { color: theme.label }]}
-        dropdownIconColor={theme.title}
-      >
-        <Picker.Item label="Month" value="" color="#6B7280" />
-        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-          .map((m, i) => (
-            <Picker.Item key={i} label={m} value={i + 1} />
-          ))}
-      </Picker>
-    </View>
+              {/* MONTH */}
+              <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
+                <Picker
+                  selectedValue={birthday ? birthday.getMonth() + 1 : ""}
+                  onValueChange={(m) => {
+                    if (!birthday) {
+                      setBirthday(new Date(2000, m - 1, 1));
+                      return;
+                    }
+                    const newDate = new Date(birthday);
+                    newDate.setMonth(m - 1);
+                    setBirthday(newDate);
+                  }}
+                  style={[styles.picker, { color: theme.label }]}
+                  dropdownIconColor={theme.title}
+                >
+                  <Picker.Item label="Month" value="" color="#6B7280" />
+                  {[
+                    "Jan","Feb","Mar","Apr","May","Jun",
+                    "Jul","Aug","Sep","Oct","Nov","Dec",
+                  ].map((m, i) => (
+                    <Picker.Item key={i} label={m} value={i + 1} />
+                  ))}
+                </Picker>
+              </View>
 
-    {/* YEAR */}
-    <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
-      <Picker
-        selectedValue={birthday ? birthday.getFullYear() : ""}
-        onValueChange={(y) => {
-          if (!birthday) {
-            setBirthday(new Date(y, 0, 1));
-            return;
-          }
-          const newDate = new Date(birthday);
-          newDate.setFullYear(y);
-          setBirthday(newDate);
-        }}
-        style={[styles.picker, { color: theme.label }]}
-        dropdownIconColor={theme.title}
-      >
-        <Picker.Item label="Year" value="" color="#6B7280" />
-
-        {Array.from({ length: 25 }, (_, i) => {
-          const year = new Date().getFullYear() - i;
-          return <Picker.Item key={year} label={`${year}`} value={year} />;
-        })}
-      </Picker>
-    </View>
-  </View>
-</View>
+              {/* YEAR */}
+              <View style={[styles.birthdayPickerWrapper, { borderColor: theme.label }]}>
+                <Picker
+                  selectedValue={birthday ? birthday.getFullYear() : ""}
+                  onValueChange={(y) => {
+                    if (!birthday) {
+                      setBirthday(new Date(y, 0, 1));
+                      return;
+                    }
+                    const newDate = new Date(birthday);
+                    newDate.setFullYear(y);
+                    setBirthday(newDate);
+                  }}
+                  style={[styles.picker, { color: theme.label }]}
+                  dropdownIconColor={theme.title}
+                >
+                  <Picker.Item label="Year" value="" color="#6B7280" />
+                  {Array.from({ length: 25 }, (_, i) => {
+                    const year = new Date().getFullYear() - i;
+                    return <Picker.Item key={year} label={`${year}`} value={year} />;
+                  })}
+                </Picker>
+              </View>
+            </View>
+          </View>
 
           {/* SEX */}
           <View style={styles.fieldContainer}>
@@ -228,13 +230,34 @@ export default function ParentSettings() {
             <View style={[styles.pickerWrapper, { borderColor: theme.label }]}>
               <Picker
                 selectedValue={sex}
-                onValueChange={(value) => setSex(value)}
+                onValueChange={setSex}
                 style={[styles.picker, { color: theme.label }]}
                 dropdownIconColor={theme.title}
               >
                 <Picker.Item label="Select..." value="" color="#6B7280" />
-                <Picker.Item label="Boy" value="Boy" color="#000" />
-                <Picker.Item label="Girl" value="Girl" color="#000" />
+                <Picker.Item label="Boy" value="Boy" />
+                <Picker.Item label="Girl" value="Girl" />
+              </Picker>
+            </View>
+          </View>
+
+          {/* THEME COLOR */}
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, { color: theme.label }]}>Theme Colour</Text>
+
+            <View style={[styles.pickerWrapper, { borderColor: theme.label }]}>
+              <Picker
+                selectedValue={themeColor}
+                onValueChange={setThemeColor}
+                style={[styles.picker, { color: theme.label }]}
+                dropdownIconColor={theme.title}
+              >
+                <Picker.Item label="Blue" value="blue" />
+                <Picker.Item label="Pink" value="pink" />
+                <Picker.Item label="Green" value="green" />
+                <Picker.Item label="Purple" value="purple" />
+                <Picker.Item label="Yellow" value="yellow" />
+                <Picker.Item label="Neutral" value="neutral" />
               </Picker>
             </View>
           </View>
@@ -289,7 +312,7 @@ export default function ParentSettings() {
         </View>
       </ScrollView>
 
-      {/* FLOATING SAVE BUTTON */}
+      {/* FLOATING BUTTONS */}
       <TouchableOpacity
         style={[styles.floatingSave, { backgroundColor: theme.buttonBg }]}
         onPress={saveProfile}
@@ -303,7 +326,6 @@ export default function ParentSettings() {
       >
         <Text style={styles.floatingSaveText}>🔙 Back</Text>
       </TouchableOpacity>
-      
 
       {/* ⭐ NEW THEMED ALERT */}
       <ThemedAlert
@@ -387,21 +409,6 @@ const styles = StyleSheet.create({
     height: 55,
   },
 
-  dateBox: {
-    width: "100%",
-    borderWidth: 1.4,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    marginTop: 5,
-  },
-
-  dateText: {
-    fontSize: 16,
-  },
-
   note: {
     fontSize: 14,
     marginTop: 15,
@@ -457,16 +464,16 @@ const styles = StyleSheet.create({
   },
 
   birthdayRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  width: "100%",
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
 
-birthdayPickerWrapper: {
-  width: "32%",
-  backgroundColor: "#fff",
-  borderWidth: 1.4,
-  borderRadius: 14,
-  overflow: "hidden",
-},
+  birthdayPickerWrapper: {
+    width: "32%",
+    backgroundColor: "#fff",
+    borderWidth: 1.4,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
 });

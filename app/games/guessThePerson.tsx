@@ -17,20 +17,20 @@ import { getChildTheme } from "../theme/childTheme";
 type PeopleCard = {
   name: string;
   image?: string;
-  icon?: string;
 };
 
 export default function People() {
   const [childName, setChildName] = useState("Child");
   const [themeColor, setThemeColor] = useState("neutral");
   const [peoples, setPeoples] = useState<PeopleCard[]>([]);
+  const [questionPerson, setQuestionPerson] = useState<PeopleCard | null>(null);
 
   useEffect(() => {
-    const loadName = async () => {
+    const loadProfile = async () => {
       const saved = await AsyncStorage.getItem("childProfile");
       if (saved) {
         const profile = JSON.parse(saved);
-        setChildName(profile.name);
+        setChildName(profile.name || "Child");
         setThemeColor(profile.themeColor || "neutral");
       }
     };
@@ -59,8 +59,8 @@ export default function People() {
       setPeoples(converted);
     };
 
+    loadProfile();
     loadPeople();
-    loadName();
   }, []);
 
   // Default fallback list
@@ -75,46 +75,78 @@ export default function People() {
       "Friend",
       "Teacher",
     ].map((name) => ({ name }));
-
     setPeoples(defaults);
   }
 
-  const speakThePhrase = (text: string) => {
+  // Speak using TTS
+  const speak = (text: string) => {
     Speech.speak(text, {
       rate: 1.0,
       pitch: 1.0,
     });
   };
 
-  // 🌈 Apply theme based on sex
-const theme = getChildTheme(themeColor);
+  const theme = getChildTheme(themeColor);
+
+  // ⭐ UPDATED nextQuestion WITH "yourself" LOGIC
+  const nextQuestion = (answer?: PeopleCard) => {
+    if (answer && questionPerson) {
+      if (answer.name === questionPerson.name) {
+        speak(`Well done! You found ${answer.name}, ${childName}!`);
+      } else {
+        speak(
+          `Oops! That was ${answer.name}. Try again. Can you find ${questionPerson.name}?`
+        );
+        return;
+      }
+    }
+
+    const random = peoples[Math.floor(Math.random() * peoples.length)];
+    setQuestionPerson(random);
+
+    // ⭐ If the person is the child, special message
+    if (random.name.toLowerCase() === childName.toLowerCase()) {
+      speak(`Can you find yourself, ${childName}?`);
+    } else {
+      speak(`Can you find ${random.name}, ${childName}?`);
+    }
+  };
+
+  useEffect(() => {
+    if (peoples.length > 0) nextQuestion();
+  }, [peoples]);
 
   return (
     <ScrollView
       style={{ backgroundColor: theme.bg }}
       contentContainerStyle={styles.container}
     >
-      {/* ⭐ BANNER HEADER */}
-      <View style={[styles.banner, { backgroundColor: theme.tileBg }]}>
-        <Text style={[styles.bannerIcon, { color: theme.title }]}>👨‍👩‍👧</Text>
-        <Text style={[styles.bannerTitle, { color: theme.title }]}>
-          People
-        </Text>
-        <Text style={[styles.bannerSubtitle, { color: theme.label }]}>
-          Tap a person, {childName}
-        </Text>
-      </View>
+      {/* ⭐ QUESTION CARD */}
+      {questionPerson && (
+        <View style={[styles.questionCard, { backgroundColor: theme.tileBg }]}>
+          <Text style={[styles.questionIcon, { color: theme.title }]}>👤</Text>
 
-      {/* GRID */}
+          <Text style={[styles.questionName, { color: theme.title }]}>
+            {questionPerson.name}
+          </Text>
+
+          <Text style={[styles.questionSubtitle, { color: theme.label }]}>
+            {questionPerson.name.toLowerCase() === childName.toLowerCase()
+              ? `Can you find yourself, ${childName}?`
+              : "Can you find them?"}
+          </Text>
+        </View>
+      )}
+
+      {/* ⭐ PEOPLE GRID */}
       <View style={styles.grid}>
         {peoples.map((person, index) => (
           <TouchableOpacity
             key={index}
             style={[styles.tile, { backgroundColor: theme.tileBg }]}
             activeOpacity={0.85}
-            onPress={() => speakThePhrase(person.name)}
+            onPress={() => nextQuestion(person)}
           >
-            {/* IMAGE or FALLBACK ICON */}
             {person.image ? (
               <Image source={{ uri: person.image }} style={styles.cardImage} />
             ) : (
@@ -131,7 +163,7 @@ const theme = getChildTheme(themeColor);
             )}
 
             <Text
-              style={[styles.people, { color: theme.label }]}
+              style={[styles.peopleText, { color: theme.label }]}
               numberOfLines={2}
               adjustsFontSizeToFit
             >
@@ -141,10 +173,10 @@ const theme = getChildTheme(themeColor);
         ))}
       </View>
 
-      {/* BACK BUTTON */}
+      {/* ⭐ BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/child-categories")}
+        onPress={() => router.push("/categories/miniGames")}
       >
         <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
@@ -152,19 +184,19 @@ const theme = getChildTheme(themeColor);
   );
 }
 
-// ----------------------------------------
+// ---------------------------------------------
 // STYLES
-// ----------------------------------------
+// ---------------------------------------------
 const styles = StyleSheet.create({
   container: {
     paddingTop: 30,
     paddingBottom: 40,
     alignItems: "center",
-    minHeight: "100%", // ⭐ ensures background fills screen
+    minHeight: "100%",
   },
 
-  // 🌟 BANNER HEADER
-  banner: {
+  // ⭐ QUESTION BANNER
+  questionCard: {
     width: "90%",
     paddingVertical: 25,
     borderRadius: 22,
@@ -172,27 +204,27 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     elevation: 3,
   },
-  bannerIcon: {
-    fontSize: 60,
+  questionIcon: {
+    fontSize: 70,
     marginBottom: 10,
   },
-  bannerTitle: {
+  questionName: {
     fontSize: 30,
     fontWeight: "900",
+    textAlign: "center",
   },
-  bannerSubtitle: {
+  questionSubtitle: {
     fontSize: 18,
     marginTop: 5,
     fontWeight: "600",
   },
 
-  // GRID
+  // ⭐ GRID
   grid: {
     width: "90%",
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 20,
   },
 
   tile: {
@@ -220,12 +252,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-
   fallbackIcon: {
     fontSize: 42,
   },
 
-  people: {
+  peopleText: {
     fontSize: 22,
     fontWeight: "800",
     textAlign: "center",
@@ -236,9 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     borderRadius: 12,
     marginTop: 20,
-    marginBottom: 20,
   },
-
   backText: {
     color: "#fff",
     fontSize: 18,

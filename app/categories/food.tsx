@@ -24,7 +24,7 @@ type FoodItem = {
 
 export default function Food() {
   const [childName, setChildName] = useState("Child");
-  const [sex, setSex] = useState("");
+  const [themeColor, setThemeColor] = useState("neutral");
   const [foods, setFoods] = useState<FoodItem[]>([]);
 
   //---------------------------------------------------
@@ -36,7 +36,7 @@ export default function Food() {
       if (saved) {
         const profile = JSON.parse(saved);
         setChildName(profile.name);
-        setSex(profile.sex || "");
+        setThemeColor(profile.themeColor || "neutral");
       }
 
       const savedFood = await AsyncStorage.getItem("childFood");
@@ -91,7 +91,7 @@ export default function Food() {
   //---------------------------------------------------
   // THEME BASED ON SEX
   //---------------------------------------------------
-  const theme = getChildTheme(sex);
+const theme = getChildTheme(themeColor);
 
   //---------------------------------------------------
   // RENDER

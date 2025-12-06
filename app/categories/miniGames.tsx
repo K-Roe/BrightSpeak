@@ -4,55 +4,36 @@ import { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // Import the theme helper
-import { getChildTheme } from "./theme/childTheme";
+import { getChildTheme } from "../theme/childTheme";
 
 const categories = [
   {
     id: "food",
-    label: "Food",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/1046/1046784.png" },
-    route: "/categories/food",
+    label: "Guess The Letter",
+    image: require("../../assets/images/alphabet.png"),
+    route: "/games/guessTheLetters",
   },
-  {
+    {
+    id: "numbers",
+    label: "Guess The Number",
+    image: require("../../assets/images/numbers.png"),
+    route: "/games/guessTheNumbers",
+  },
+    {
     id: "people",
     label: "People",
     image: { uri: "https://cdn-icons-png.flaticon.com/512/3048/3048127.png" },
-    route: "/categories/people",
-  },
-  {
-    id: "phrase",
-    label: "Phrase",
-    image: require("../assets/images/phrase.png"),
-    route: "/categories/phrase",
-  },
-  {
-    id: "numbers",
-    label: "Numbers",
-    image: require("../assets/images/numbers.png"),
-    route: "/categories/numbers",
-  },
-  {
-    id: "alphabet",
-    label: "Alphabet",
-    image: require("../assets/images/alphabet.png"),
-    route: "/categories/letters",
-  },
-  {
-    id: "emotions",
-    label: "Feelings",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/742/742752.png" },
-    route: "/categories/feelings",
+    route: "/games/guessThePerson",
   },
   {
     id: "play",
-    label: "Mini Games",
-    image: { uri: "https://cdn-icons-png.flaticon.com/512/3565/3565605.png" },
-    route: "/categories/miniGames",
+    label: "Ten in the bed",
+    image: require("../../assets/images/teninbed.png"),
+    route: "/games/ten-bed",
   },
-
 ];
 
-export default function ChildCategories() {
+export default function MiniGames() {
   const [childName, setChildName] = useState("Child");
   const [themeColor, setThemeColor] = useState("neutral");
 
@@ -105,7 +86,7 @@ const theme = getChildTheme(themeColor);
 
       <TouchableOpacity
         style={[styles.button, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/")}
+        onPress={() => router.push("/child-categories")}
       >
         <Text style={styles.buttonText}>Back</Text>
       </TouchableOpacity>

@@ -1,16 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Audio } from "expo-av";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Image,
-    PanResponder,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Image,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const ALL_NUMBERS = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -54,12 +55,11 @@ function DraggableNumber({ num, onDropInBed }: DraggableNumberProps) {
       onPanResponderRelease: (evt, gesture) => {
         pan.flattenOffset();
 
-        // Simple "bed" hit area: top part of the screen
+        // Simple bed hit area
         if (gesture.moveY < 260) {
           onDropInBed(num);
         }
 
-        // Snap back to original position
         Animated.spring(pan, {
           toValue: { x: 0, y: 0 },
           useNativeDriver: false,
@@ -73,7 +73,6 @@ function DraggableNumber({ num, onDropInBed }: DraggableNumberProps) {
       style={[styles.draggableWrapper, { transform: pan.getTranslateTransform() }]}
       {...panResponder.panHandlers}
     >
-      {/* Just the number, no card */}
       <Text
         style={[
           styles.numberText,
@@ -90,6 +89,7 @@ export default function TenInTheBed() {
   const [childName, setChildName] = useState("Child");
   const [numbersInBed, setNumbersInBed] = useState<number[]>([]);
   const [completed, setCompleted] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
     const loadName = async () => {
@@ -99,12 +99,37 @@ export default function TenInTheBed() {
         setChildName(profile.name);
       }
     };
+
     loadName();
+    playMusic();
+
+    // 🔥 Clean up audio when leaving screen
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+
   }, []);
+
+  async function playMusic() {
+    const { sound } = await Audio.Sound.createAsync(
+      require("../../assets/audio/driftaway.mp3"),
+      {
+        shouldPlay: true,
+        isLooping: true,
+      }
+    );
+
+    // 🔊 Lower volume so Speech is heard clearly (20% volume)
+    await sound.setVolumeAsync(0.2);
+
+    setSound(sound);
+  }
 
   const handleDropInBed = (num: number) => {
     setNumbersInBed((prev) => {
-      if (prev.includes(num)) return prev; // already in bed
+      if (prev.includes(num)) return prev;
 
       const updated = [...prev, num].sort((a, b) => a - b);
 
@@ -166,11 +191,7 @@ export default function TenInTheBed() {
       <Text style={styles.instructions}>Drag a number up into the bed</Text>
       <View style={styles.dragGrid}>
         {remainingNumbers.map((num) => (
-          <DraggableNumber
-            key={num}
-            num={num}
-            onDropInBed={handleDropInBed}
-          />
+          <DraggableNumber key={num} num={num} onDropInBed={handleDropInBed} />
         ))}
       </View>
 
@@ -185,7 +206,13 @@ export default function TenInTheBed() {
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/child-categories")}
+        onPress={async () => {
+          if (sound) {
+            await sound.stopAsync();
+            await sound.unloadAsync();
+          }
+          router.push("/child-categories");
+        }}
       >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
@@ -274,7 +301,6 @@ const styles = StyleSheet.create({
   numberText: {
     fontSize: 40,
     fontWeight: "900",
-    color: "#4F46E5",
   },
 
   completeBox: {

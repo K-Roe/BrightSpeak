@@ -11,9 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-// ⭐ Theme import
 import { getChildTheme } from "../theme/childTheme";
+
 
 type FeelingItem = {
   name: string;
@@ -23,7 +22,7 @@ type FeelingItem = {
 
 export default function Feelings() {
   const [childName, setChildName] = useState("Child");
-  const [sex, setSex] = useState("");
+  const [themeColor, setThemeColor] = useState("neutral");
   const [feelings, setFeelings] = useState<FeelingItem[]>([]);
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function Feelings() {
       if (savedName) {
         const profile = JSON.parse(savedName);
         setChildName(profile.name);
-        setSex(profile.sex || "");
+        setThemeColor(profile.themeColor || "neutral");
       }
 
       const savedFeelingData = await AsyncStorage.getItem("childFeelings");
@@ -62,7 +61,7 @@ export default function Feelings() {
     loadAll();
   }, []);
 
-  const theme = getChildTheme(sex);
+const theme = getChildTheme(themeColor);
 
   // ----------------------------------
   // DEFAULT FEELINGS

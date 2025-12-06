@@ -9,7 +9,7 @@ import { getChildTheme } from "../theme/childTheme";
 
 export default function Numbers() {
   const [childName, setChildName] = useState("Child");
-  const [sex, setSex] = useState("");
+  const [themeColor, setThemeColor] = useState("neutral");
 
   useEffect(() => {
     const loadName = async () => {
@@ -17,13 +17,13 @@ export default function Numbers() {
       if (saved) {
         const profile = JSON.parse(saved);
         setChildName(profile.name);
-        setSex(profile.sex || "");
+        setThemeColor(profile.themeColor || "neutral");
       }
     };
     loadName();
   }, []);
 
-  const theme = getChildTheme(sex);
+const theme = getChildTheme(themeColor);
 
   const speakNumber = (num: number) => {
     Speech.speak(num.toString(), {
