@@ -53,12 +53,12 @@ export default function MiniGames() {
 const theme = getChildTheme(themeColor);
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.bg },
-      ]}
-    >
+   <ScrollView
+  style={{ flex: 1, backgroundColor: theme.bg }}
+  contentContainerStyle={[
+    styles.container,
+  ]}
+>
       <Text style={[styles.title, { color: theme.title }]}>
         Hello, {childName}!
       </Text>
@@ -86,7 +86,7 @@ const theme = getChildTheme(themeColor);
 
       <TouchableOpacity
         style={[styles.button, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/child-categories")}
+        onPress={() => router.replace("/child-categories")}
       >
         <Text style={styles.buttonText}>Back</Text>
       </TouchableOpacity>

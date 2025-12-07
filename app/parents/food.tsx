@@ -219,7 +219,7 @@ export default function ParentFood() {
       {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("../parent-settings")}
+        onPress={() => router.replace("../parent-settings")}
       >
         <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>

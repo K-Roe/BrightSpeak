@@ -153,7 +153,7 @@ const theme = getChildTheme(themeColor);
       {/* ⭐ BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/child-categories")}
+        onPress={() => router.replace("/child-categories")}
       >
         <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>

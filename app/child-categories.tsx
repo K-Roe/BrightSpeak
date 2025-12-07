@@ -105,7 +105,7 @@ const theme = getChildTheme(themeColor);
 
       <TouchableOpacity
         style={[styles.button, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/")}
+        onPress={() => router.replace("/")}
       >
         <Text style={styles.buttonText}>Back</Text>
       </TouchableOpacity>

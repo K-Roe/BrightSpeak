@@ -185,7 +185,7 @@ export default function ParentPhrases() {
       {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("../parent-settings")}
+        onPress={() => router.replace("../parent-settings")}
       >
         <Text style={styles.backText}>🡰 Back</Text>
       </TouchableOpacity>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 50,
     alignItems: "center",
-    minHeight: "100%",                 // ★ Makes theme reach bottom ALWAYS
+    minHeight: "100%",               
   },
 
   banner: {

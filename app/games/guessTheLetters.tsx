@@ -105,7 +105,7 @@ export default function Letters() {
       {/* BACK BUTTON */}
       <TouchableOpacity
         style={[styles.backButton, { backgroundColor: theme.buttonBg }]}
-        onPress={() => router.push("/categories/miniGames")}
+        onPress={() => router.replace("/categories/miniGames")}
       >
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>

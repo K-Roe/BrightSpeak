@@ -211,7 +211,7 @@ export default function TenInTheBed() {
             await sound.stopAsync();
             await sound.unloadAsync();
           }
-          router.push("/child-categories");
+          router.replace("/categories/miniGames");
         }}
       >
         <Text style={styles.backText}>Back</Text>
